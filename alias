@@ -1,4 +1,4 @@
-[toplevel] 
+[toplevel]
 
 ###############
 ### GENERAL ###
@@ -15,37 +15,74 @@ tostring-with-jq =
   }; f
 
 # List or set your region
-region = 
-  !f() { 
-    [[ $# -eq 1 ]] && aws configure set region "$1" || aws configure get region; 
-  }; f
-
-upgrade = 
+region =
   !f() {
-    curl -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
-    sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
-    rm -f /tmp/AWSCLIV2.pkg
+    [ $# -eq 1 ] && aws configure set region "$1" || aws configure get region;
   }; f
 
-check-upgrade = 
-  !f() { 
-    rm -f /tmp/AWSCLIV2.pkg
-    latest_cli_version=$(curl -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
-    tar xOv - 2>/dev/null | \
-    grep -a '<pkg-info' | \
-    sed "s#.* version=\"\([0-9\.]*\)\".*#\1#")
-    release_date=$(curl -sI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
-        grep 'Last-Modified' | cut -d':' -f 2- | tr '\r\n' ' ')
-    echo "Current version: $(aws --version | cut -d' ' -f 1)"
-    echo "    New version: aws-cli/${latest_cli_version} (${release_date})"
-  }; f
-
-install-version = 
+upgrade =
   !f() {
-    curl -s "https://awscli.amazonaws.com/AWSCLIV2-$1.pkg" -o "/tmp/AWSCLIV2.pkg"
-    sudo installer -pkg /tmp/AWSCLIV2.pkg -target /
-    rm -f /tmp/AWSCLIV2.pkg
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+    UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
+    SUDO_CLI=$(which sudo) || { echo "ERROR: sudo not installed." ; return 1 ; }
+    echo OSTYPE=$OSTYPE
+		[ "$OSTYPE" = "darwin"* ] &&  {
+		  echo "OS: OSX / Darwin"
+	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+	    echo "Downloading AWS CLI v2..."
+	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
+      $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
+      rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
+	    echo "New version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+		}
+		[ $(uname -o) = "GNU/Linux" ] && {
+		  echo "OS: GNU/Linux"
+		  rm -f /tmp/awscliv2.zip 2> /dev/null
+		  rm -rf /tmp/aws/ 2> /dev/null
+	    echo "Downloading AWS CLI v2..."
+	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
+	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+	    echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
+	    $SUDO_CLI /tmp/aws/install --update
+		  rm -rf /tmp/aws/ 2> /dev/null
+		}
   }; f
+
+check-upgrade =
+  !f() {
+  	CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+  	TAR_CLI=$(which tar) || { echo "ERROR: tar not installed." ; return 1 ; }
+    UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed." ; return 1 ; }
+    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed." ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
+    TR_CLI=$(which tr) || { echo "ERROR: tr not installed." ; return 1 ; }
+		[ "$OSTYPE" = "darwin"* ] &&  {
+		  echo "OS: OSX / Darwin"
+	    rm -f /tmp/AWSCLIV2.pkg
+	    echo "Downloading AWS CLI v2..."
+	    latest_cli_version=$($CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
+	    $TAR_CLI xOv - 2>/dev/null | \
+	    $GREP_CLI -a '<pkg-info' | \
+	    $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
+	    release_date=$($CURL_CLI -sI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
+	        $GREP_CLI 'Last-Modified' | $CUT_CLI -d':' -f 2- | $TR_CLI '\r\n' ' ')
+	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+	    echo "    New version: aws-cli/${latest_cli_version} (${release_date})"
+		}
+		[ $(uname -o) = "GNU/Linux" ] && {
+		  echo "OS: GNU/Linux"
+	    echo "Downloading AWS CLI v2..."
+	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
+	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+      echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
+		  rm -rf /tmp/aws/ 2> /dev/null
+		}
+  }; f
+
 
 ## Shortcuts
 ag = apigateway
@@ -55,7 +92,7 @@ cp = codepipeline
 ddb = dynamodb
 eb = elasticbeanstalk
 ec = elasticache
-sc = servicecatalog 
+sc = servicecatalog
 sg = security-group
 
 ###########
@@ -78,7 +115,7 @@ create-assume-role =
         }";
   }; f
 
-find-access-key = 
+find-access-key =
   !f() {
     clear_to_eol=$(tput el)
     for i in $(aws iam list-users --query "Users[].UserName" --output text); do
@@ -96,16 +133,16 @@ find-access-key =
 
 list-iam-users = iam list-users --query "Users[].UserName" --output table
 
-list-user-keys = 
+list-user-keys =
   !f() {
-    aws iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId"; 
-  }; f 
+    aws iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId";
+  }; f
 
-clear-virtual-mfa = 
+clear-virtual-mfa =
   !f() {
     account_id=$(aws sts get-caller-identity --output json | jq -r '.Account')
     aws iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
-  }; f 
+  }; f
 
 find-users-without-mfa =
   !f() {
@@ -121,7 +158,7 @@ find-users-without-mfa =
 generate-sts-token =
   !f() {
     user_arn=$(aws whoami | jq -r .Arn)
-    duration=${1:-3600}
+    duration=${1:-129600}
     session_data=$(aws sts get-session-token --duration-seconds $duration)
     echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
     echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
