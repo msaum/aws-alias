@@ -15,6 +15,12 @@ ec = elasticache
 sc = servicecatalog
 sg = security-group
 
+tostring =
+  !f() {
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." ; return 1 ; }
+    cat "${1}" | jq 'tostring'
+  }; f
+
 # List or set your region
 # Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws region [region]
