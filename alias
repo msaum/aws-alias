@@ -1,26 +1,30 @@
- [toplevel]
+[toplevel]
 
 ###############
 ### GENERAL ###
 ###############
 
-tostring =
-  !f() {
-    jp -f "${1}" 'to_string(@)'
-  }; f
-
-tostring-with-jq =
-  !f() {
-    cat "${1}" | jq 'tostring'
-  }; f
+## Shortcuts
+ag = apigateway
+as = autoscaling
+cfn = cloudformation
+cp = codepipeline
+ddb = dynamodb
+eb = elasticbeanstalk
+ec = elasticache
+sc = servicecatalog
+sg = security-group
 
 # List or set your region
+# Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws region [region]
 region =
   !f() {
     [ $# -eq 1 ] && aws configure set region "$1" || aws configure get region;
   }; f
 
 # List or set your region
+# Usage: aws profiles
 profiles =
   !f() {
     echo "export AWS_DEFAULT_PROFILE= to set a default profile."
@@ -28,6 +32,8 @@ profiles =
     aws configure list-profiles
   }; f
 
+# Upgrade to the latest version of the AWS CLI v2
+# Usage: aws upgrade
 upgrade =
   !f() {
     CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
@@ -58,6 +64,7 @@ upgrade =
 		}
   }; f
 
+# Usage: aws check-upgrade
 check-upgrade =
   !f() {
   	CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
@@ -95,7 +102,12 @@ check-upgrade =
 ###########
 ### MFA ###
 ###########
+
 # aws-mfa --duration 129600 --profile aws-hhs-cms-tms
+# Prerequisites:
+# - aws-mfa installed
+# - Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws mfa [profile]
 mfa =
   !f() {
     [ "$AWS_DEFAULT_PROFILE" ]  && PROFILE=$AWS_DEFAULT_PROFILE
@@ -113,37 +125,32 @@ mfa =
 
   }; f
 
-## Shortcuts
-ag = apigateway
-as = autoscaling
-cfn = cloudformation
-cp = codepipeline
-ddb = dynamodb
-eb = elasticbeanstalk
-ec = elasticache
-sc = servicecatalog
-sg = security-group
 
 ###########
 ### IAM ###
 ###########
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws whoami
 whoami = sts get-caller-identity
 
-create-assume-role =
-  !f() {
-    aws iam create-role --role-name "${1}" \
-      --assume-role-policy-document \
-        "{\"Statement\":[{\
-            \"Action\":\"sts:AssumeRole\",\
-            \"Effect\":\"Allow\",\
-            \"Principal\":{\"Service\":\""${2}".amazonaws.com\"},\
-            \"Sid\":\"\"\
-          }],\
-          \"Version\":\"2012-10-17\"\
-        }";
-  }; f
+#create-assume-role =
+#  !f() {
+#    aws iam create-role --role-name "${1}" \
+#      --assume-role-policy-document \
+#        "{\"Statement\":[{\
+#            \"Action\":\"sts:AssumeRole\",\
+#            \"Effect\":\"Allow\",\
+#            \"Principal\":{\"Service\":\""${2}".amazonaws.com\"},\
+#            \"Sid\":\"\"\
+#          }],\
+#          \"Version\":\"2012-10-17\"\
+#        }";
+#  }; f
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws find-access-key <access key>
+# Note: If there are a lot of IAM users, this may take some time to run
 find-access-key =
   !f() {
     clear_to_eol=$(tput el)
@@ -160,19 +167,39 @@ find-access-key =
     fi
   }; f
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws list-iam-users
 list-iam-users = iam list-users --query "Users[].UserName" --output table
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws list-user-keys <username>
 list-user-keys =
   !f() {
     aws iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId";
   }; f
 
-clear-virtual-mfa =
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws list-virtual-mfa [username]
+list-virtual-mfa =
+  !f() {
+    [ "${1}" ]    && aws iam list-mfa-devices --user-name ${1} | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
+    [ -z "${1}" ] && aws iam list-mfa-devices | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
+  }; f
+
+
+
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws delete-virtual-mfa <username>
+delete-virtual-mfa =
   !f() {
     account_id=$(aws sts get-caller-identity --output json | jq -r '.Account')
     aws iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
   }; f
 
+# Find users without mfa
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Note: May have issue with large numbers of users due to AWS API throttling
+# Usage: find-users-without-mfa
 find-users-without-mfa =
   !f() {
     echo "Users withouth MFA enabled:"
@@ -184,45 +211,47 @@ find-users-without-mfa =
     done
   }; f
 
-generate-sts-token =
-  !f() {
-    user_arn=$(aws whoami | jq -r .Arn)
-    duration=${1:-129600}
-    session_data=$(aws sts get-session-token --duration-seconds $duration)
-    echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
-    echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
-    echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | jq -r .Credentials.AccessKeyId)"
-    echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | jq -r .Credentials.SecretAccessKey)"
-    echo "export AWS_SESSION_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
-    echo "export AWS_SECURITY_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
-  }; f
+#generate-sts-token =
+#  !f() {
+#    user_arn=$(aws whoami | jq -r .Arn)
+#    duration=${1:-129600}
+#    session_data=$(aws sts get-session-token --duration-seconds $duration)
+#    echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
+#    echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
+#    echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | jq -r .Credentials.AccessKeyId)"
+#    echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | jq -r .Credentials.SecretAccessKey)"
+#    echo "export AWS_SESSION_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
+#    echo "export AWS_SECURITY_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
+#  }; f
 
-assume =
-  !f() {
-    res=$(aws sts assume-role --role-arn ${1} --role-session-name session)
-    if echo $res | grep -q AccessKeyId; then
-        echo $res \
-        | jq -r '
-        "","[\(.Credentials.AccessKeyId)]",
-        "aws_access_key_id     = \(.Credentials.AccessKeyId)",
-        "aws_secret_access_key = \(.Credentials.SecretAccessKey)",
-        "aws_session_token     = \(.Credentials.SessionToken)",
-        "aws_security_token    = \(.Credentials.SessionToken)"
-        ' \
-        >> ~/.aws/credentials
-        echo $res | jq -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
-    fi
-  }; f
+#assume =
+#  !f() {
+#    res=$(aws sts assume-role --role-arn ${1} --role-session-name session)
+#    if echo $res | grep -q AccessKeyId; then
+#        echo $res \
+#        | jq -r '
+#        "","[\(.Credentials.AccessKeyId)]",
+#        "aws_access_key_id     = \(.Credentials.AccessKeyId)",
+#        "aws_secret_access_key = \(.Credentials.SecretAccessKey)",
+#        "aws_session_token     = \(.Credentials.SessionToken)",
+#        "aws_security_token    = \(.Credentials.SessionToken)"
+#        ' \
+#        >> ~/.aws/credentials
+#        echo $res | jq -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
+#    fi
+#  }; f
 
 ###########
 ### EC2 ###
 ###########
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 running-instances = ec2 describe-instances \
     --filter Name=instance-state-name,Values=running \
     --output table \
     --query 'Reservations[].Instances[].{ID: InstanceId,Hostname: PublicDnsName,Name: Tags[?Key==`Name`].Value | [0],Type: InstanceType, Platform: Platform || `Linux`}'
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 ebs-volumes= ec2 describe-volumes \
     --query 'Volumes[].{VolumeId: VolumeId,State: State,Size: Size,Name: Tags[0].Value,AZ: AvailabilityZone}' \
     --output table
