@@ -205,7 +205,7 @@ delete-virtual-mfa =
 # Find users without mfa
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Note: May have issue with large numbers of users due to AWS API throttling
-# Usage: find-users-without-mfa
+# Usage: aws find-users-without-mfa
 find-users-without-mfa =
   !f() {
     echo "Users withouth MFA enabled:"
@@ -252,16 +252,20 @@ find-users-without-mfa =
 ###########
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws running-instances
 running-instances = ec2 describe-instances \
     --filter Name=instance-state-name,Values=running \
     --output table \
     --query 'Reservations[].Instances[].{ID: InstanceId,Hostname: PublicDnsName,Name: Tags[?Key==`Name`].Value | [0],Type: InstanceType, Platform: Platform || `Linux`}'
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
-ebs-volumes= ec2 describe-volumes \ZZ
+# Usage: aws ebs-volumes
+ebs-volumes= ec2 describe-volumes \
     --query 'Volumes[].{VolumeId: VolumeId,State: State,Size: Size,Name: Tags[0].Value,AZ: AvailabilityZone}' \
     --output table
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws amazon-linux-amis
 amazon-linux-amis = ec2 describe-images \
     --filter \
       Name=owner-alias,Values=amazon \
@@ -273,27 +277,48 @@ amazon-linux-amis = ec2 describe-images \
     --query "reverse(sort_by(Images, &CreationDate))[*].[ImageId,Name,Description]" \
     --output text
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws list-sgs
 list-sgs = ec2 describe-security-groups --query "SecurityGroups[].[GroupId, GroupName]" --output text
 
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws sg-rules <security group id>
 sg-rules =
   !f() {
+  [ -z "${1}" ] &&
+        {
+          echo "Security group id not given"
+          echo "Usage: aws sg-rules <security group id>"
+          return 1
+        }
     aws ec2 describe-security-groups \
     --query "SecurityGroups[].IpPermissions[].[FromPort,ToPort,IpProtocol,join(',',IpRanges[].CidrIp)]" \
     --group-id "$1" --output text;
   }; f
 
+# Translates a security group name into a security group id
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws get-group-id
 get-group-id =
   !f() {
+    [ -z "${1}" ] &&
+          {
+            echo "Security group name not given"
+            echo "Usage: aws get-group-id <security group name>"
+            return 1
+          }
     aws ec2 describe-security-groups --filters Name=group-name,Values=${1} --query SecurityGroups[0].GroupId --output text
   }; f
 
-authorize-my-ip-by-name =
-  !f() {
-    group_id=$(aws get-group-id "${1}")
-    aws authorize-my-ip "$group_id"
-  }; f
+#authorize-my-ip-by-name =
+#  !f() {
+#    group_id=$(aws get-group-id "${1}")
+#    aws authorize-my-ip "$group_id"
+#  }; f
 
 # list all security group port ranges open to 0.0.0.0/0
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws public-ports
 public-ports = ec2 describe-security-groups \
   --filters Name=ip-permission.cidr,Values=0.0.0.0/0 \
   --query 'SecurityGroups[].{
@@ -305,32 +330,35 @@ public-ports = ec2 describe-security-groups \
       ][]
   }'
 
+# Show my current external ip address
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws myip
 myip =
   !f() {
     curl https://checkip.amazonaws.com
   }; f
 
-allow-my-ip =
-  !f() {
-    my_ip=$(aws myip)
-    aws ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
-  }; f
+#allow-my-ip =
+#  !f() {
+#    my_ip=$(aws myip)
+#    aws ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
+#  }; f
 
-revoke-my-ip =
-  !f() {
-    my_ip=$(aws myip)
-    aws ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
-  }; f
+#revoke-my-ip =
+#  !f() {
+#    my_ip=$(aws myip)
+#    aws ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
+#  }; f
 
-allow-my-ip-all =
-  !f() {
-    aws allow-my-ip ${1} all all
-  }; f
+#allow-my-ip-all =
+#  !f() {
+#    aws allow-my-ip ${1} all all
+#  }; f
 
-revoke-my-ip-all =
-  !f() {
-    aws revoke-my-ip ${1} all all
-  }; f
+#revoke-my-ip-all =
+#  !f() {
+#    aws revoke-my-ip ${1} all all
+#  }; f
 
 delete-ami =
   !f() {
