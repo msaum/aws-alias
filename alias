@@ -104,12 +104,43 @@ check-upgrade =
 		}
   }; f
 
+# Install or upgrade aws-rotate-iam-keys
+# https://github.com/rhyeal/aws-rotate-iam-keys
+install-rotate-iam-keys =
+  !f() {
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+    $CURL_CLI --no-progress-meter "https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys" -o ~/.aws/cli/aws-rotate-iam-keys
+    chmod a+x ~/.aws/cli/aws-rotate-iam-keys
+
+    if [ -x ~/.aws/cli/aws-rotate-iam-keys ]; then
+      echo "aws-rotate-iam-keys successfully installed"
+    else
+      echo "There was an error installing aws-rotate-iam-keys"
+    fi
+    }; f
+
+# Install or upgrade aws-rotate-iam-keys
+# https://github.com/rhyeal/aws-rotate-iam-keys
+rotate-iam-keys =
+  !f() {
+    [ "$1" ] && PROFILE=$1
+    if [ -z ${PROFILE} ]; then
+        echo "Your long term credentials must be provided as an argument."
+        echo "If you are using MFA, you cannot use short term credentials to rotate long term credentials."
+        echo "For example: use myprofile-long-term not myprofile"
+        echo "Usage: aws rotate-iam-keys <profile-long-term>"
+        return 1 ;
+    else
+        echo ~/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
+        ~/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
+    fi
+    }; f
 
 ###########
 ### MFA ###
 ###########
 
-# aws-mfa --duration 129600 --profile aws-hhs-cms-tms
+# aws-mfa --duration 129600 --profile myprofile
 # Prerequisites:
 # - aws-mfa installed
 # - Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
@@ -298,7 +329,7 @@ sg-rules =
 
 # Translates a security group name into a security group id
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
-# Usage: aws get-group-id
+# Usage: Usage: aws get-group-id <security group name>
 get-group-id =
   !f() {
     [ -z "${1}" ] &&
@@ -360,14 +391,23 @@ myip =
 #    aws revoke-my-ip ${1} all all
 #  }; f
 
+# Delete an AMI
+# Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws delete-ami <AMI ID>
 delete-ami =
   !f() {
-    snapshots=($(aws ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
-    aws ec2 deregister-image --image-id $1
-    for id in $snapshots
-    do
-      aws ec2 delete-snapshot --snapshot-id ${id}
-    done
+    [ -z "${1}" ] &&
+          {
+            echo "AMI ID not given"
+            echo "Usage: aws delete-ami <AMI ID>"
+            return 1
+          }
+#    snapshots=($(aws ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
+#    aws ec2 deregister-image --image-id $1
+#    for id in $snapshots
+#    do
+#      aws ec2 delete-snapshot --snapshot-id ${id}
+#    done
   }; f
 
 list-instances =
