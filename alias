@@ -46,20 +46,19 @@ upgrade =
     UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
     SUDO_CLI=$(which sudo) || { echo "ERROR: sudo not installed." ; return 1 ; }
-    echo OSTYPE=$OSTYPE
-		[ "$OSTYPE" = "darwin"* ] &&  {
-		  echo "OS: OSX / Darwin"
+    [ "$OSTYPE" = "darwin"* ] &&  {
+	    echo "OS: OSX / Darwin"
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
 	    echo "Downloading AWS CLI v2..."
 	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
-      $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
-      rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
+        $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
+        rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
 	    echo "New version: $(aws --version | $CUT_CLI -d' ' -f 1)"
-		}
-		[ $(uname -o) = "GNU/Linux" ] && {
-		  echo "OS: GNU/Linux"
-		  rm -f /tmp/awscliv2.zip 2> /dev/null
-		  rm -rf /tmp/aws/ 2> /dev/null
+    }
+    [ $(uname -o) = "GNU/Linux" ] && {
+        echo "OS: GNU/Linux"
+		rm -f /tmp/awscliv2.zip 2> /dev/null
+		rm -rf /tmp/aws/ 2> /dev/null
 	    echo "Downloading AWS CLI v2..."
 	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
@@ -134,6 +133,65 @@ rotate-iam-keys =
         echo ~/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
         ~/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
     fi
+    }; f
+
+# Show the number of days remaining on your AWS credential
+# Prerequisites:
+# - Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
+# Usage: aws iam-keys-days-remaining
+iam-keys-days-remaining =
+  !f() {
+    [ "$AWS_DEFAULT_PROFILE" ]  && PROFILE=$AWS_DEFAULT_PROFILE
+    [ "$AWS_PROFILE" ]          && PROFILE=$AWS_PROFILE
+    [ -z "${1}" ] && [ -z "$PROFILE" ] &&
+      {
+        echo "Can't determine your AWS Profile. Set AWS_PROFILE, or AWS_DEFAULT_PROFILE"
+        echo "Usage: aws iam-keys-days-remaining"
+        return 1
+      }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed." ; return 1 ; }
+    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed." ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
+    DATE_CLI=$(which date) || { echo "ERROR: date not installed." ; return 1 ; }
+    REV_CLI=$(which rev) || { echo "ERROR: rev not installed." ; return 1 ; }
+
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+
+    # Set your aws username
+    USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g')
+    echo USERNAME=$USERNAME
+
+    # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
+    CDATE=$($AWS_CLI iam list-access-keys --output json --user-name ${USERNAME} | $GREP_CLI CreateDate | $CUT_CLI -c 28- | $REV_CLI | $CUT_CLI -c 8- | $REV_CLI |  $SED_CLI -E s/T/\ /g)
+
+    # Use different code based on the OS, since Darwin uses a different version of the date command
+    [ "$OSTYPE" = "darwin"* ] &&  {
+        echo "Running Darwin version"
+        # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
+        CDATESTRING=$(date -jf "%Y-%m-%d %T" "${CDATE}")
+
+        # Get the expiriation date by adding 60 days to the create date
+        EXDATE=$($DATE_CLI -jf "%Y-%m-%d %T" -v +60d "${CDATE}" "+%s")
+
+        # Calulate the number of days between today and the expiration date
+        NOW=$($DATE_CLI "+%s")
+        DAYSTOEXPIRE=$((($EXDATE - $NOW)/86400))
+    }
+    # Linux / GNU Code
+    [ $(uname -o) = "GNU/Linux" ] && {
+        echo "Running Linux version"
+
+        # Get the expiriation date by adding 60 days to the create date
+        EXDATE=$(date +"%s" -d"$(date +"%Y-%m-%d+60 days %T" -d"$CDATE")")
+
+        # Calulate the number of days between today and the expiration date
+        NOW=$($DATE_CLI +"%s")
+        DAYSTOEXPIRE=$((($EXDATE - $NOW)/86400))
+    }
+    # Display to the user the number of days before the aws keys expire
+    printf 'There are %d days left until your aws key expires\n' "${DAYSTOEXPIRE}"
+
     }; f
 
 ###########
