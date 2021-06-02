@@ -142,14 +142,19 @@ rotate-iam-keys =
 
 # aws-mfa --duration 129600 --profile myprofile
 # Prerequisites:
-# - aws-mfa installed
+# - aws-mfa installed (https://pypi.org/project/aws-mfa/)
 # - Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws mfa [profile]
 mfa =
   !f() {
     [ "$AWS_DEFAULT_PROFILE" ]  && PROFILE=$AWS_DEFAULT_PROFILE
     [ "$AWS_PROFILE" ]          && PROFILE=$AWS_PROFILE
-    AWS_MFA_CLI=$(which aws-mfa) || { echo "ERROR: aws-mfa not installed." ; return 1 ; }
+    AWS_MFA_CLI=$(which aws-mfa) ||
+        {
+            echo "ERROR: aws-mfa not installed."
+            echo "Use \"pip install aws-mfa\" to install."
+            return 1
+        }
 
     [ "${1}" ]    && $AWS_MFA_CLI  --duration 129600 --profile $1
     [ -z "${1}" ] && [ -z "$PROFILE" ] &&
@@ -162,6 +167,15 @@ mfa =
 
   }; f
 
+# Prerequisites:
+#   - Python3 and pip3 which should already be installed as a part of the AWS CLI v2
+# Usage: aws install-mfa
+install-mfa =
+    !f() {
+        pip3 install --user --upgrade aws-mfa > /dev/null 2>&1
+        AWS_MFA_CLI=$(which aws-mfa) || { echo "ERROR: mfa not installed." ; return 1 ; }
+        echo "SUCCESS: aws-mfa installed"
+    }; f
 
 ###########
 ### IAM ###
