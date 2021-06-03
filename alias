@@ -50,7 +50,7 @@ upgrade =
 	    echo "OS: OSX / Darwin"
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
 	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
+	    $CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
         $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
         rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
 	    echo "New version: $(aws --version | $CUT_CLI -d' ' -f 1)"
@@ -60,7 +60,7 @@ upgrade =
 		rm -f /tmp/awscliv2.zip 2> /dev/null
 		rm -rf /tmp/aws/ 2> /dev/null
 	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+	    $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
 	    echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
@@ -83,7 +83,7 @@ check-upgrade =
 		  echo "OS: OSX / Darwin"
 	    rm -f /tmp/AWSCLIV2.pkg
 	    echo "Downloading AWS CLI v2..."
-	    latest_cli_version=$($CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
+	    latest_cli_version=$($CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
 	    $TAR_CLI xOv - 2>/dev/null | \
 	    $GREP_CLI -a '<pkg-info' | \
 	    $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
@@ -95,7 +95,7 @@ check-upgrade =
 		[ $(uname -o) = "GNU/Linux" ] && {
 		  echo "OS: GNU/Linux"
 	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI --no-progress-meter "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+	    $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
       echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
@@ -108,7 +108,7 @@ check-upgrade =
 install-rotate-iam-keys =
   !f() {
     CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
-    $CURL_CLI --no-progress-meter "https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys" -o ~/.aws/cli/aws-rotate-iam-keys
+    $CURL_CLI -s "https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys" -o ~/.aws/cli/aws-rotate-iam-keys
     chmod a+x ~/.aws/cli/aws-rotate-iam-keys
 
     if [ -x ~/.aws/cli/aws-rotate-iam-keys ]; then
