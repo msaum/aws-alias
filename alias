@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 [toplevel]
 
 ###############
@@ -46,19 +47,19 @@ upgrade =
     UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
     SUDO_CLI=$(which sudo) || { echo "ERROR: sudo not installed." ; return 1 ; }
-    [ "$OSTYPE" = "darwin"* ] &&  {
+    [ $(uname) = "Darwin" ] &&  {
 	    echo "OS: OSX / Darwin"
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
 	    echo "Downloading AWS CLI v2..."
 	    $CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
-        $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
-        rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
+      $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
+      rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
 	    echo "New version: $(aws --version | $CUT_CLI -d' ' -f 1)"
     }
-    [ $(uname -o) = "GNU/Linux" ] && {
-        echo "OS: GNU/Linux"
-		rm -f /tmp/awscliv2.zip 2> /dev/null
-		rm -rf /tmp/aws/ 2> /dev/null
+    [ $(uname) = "Linux" ] && {
+      echo "OS: Linux"
+		  rm -f /tmp/awscliv2.zip 2> /dev/null
+		  rm -rf /tmp/aws/ 2> /dev/null
 	    echo "Downloading AWS CLI v2..."
 	    $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
 	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
@@ -80,27 +81,27 @@ check-upgrade =
     GREP_CLI=$(which grep) || { echo "ERROR: grep not installed." ; return 1 ; }
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
     TR_CLI=$(which tr) || { echo "ERROR: tr not installed." ; return 1 ; }
-		[ "$OSTYPE" = "darwin"* ] &&  {
-		  echo "OS: OSX / Darwin"
-	    rm -f /tmp/AWSCLIV2.pkg
-	    echo "Downloading AWS CLI v2..."
-	    latest_cli_version=$($CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
-	    $TAR_CLI xOv - 2>/dev/null | \
-	    $GREP_CLI -a '<pkg-info' | \
-	    $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
-	    release_date=$($CURL_CLI -sI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
-	        $GREP_CLI 'Last-Modified' | $CUT_CLI -d':' -f 2- | $TR_CLI '\r\n' ' ')
-	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
-	    echo "    New version: aws-cli/${latest_cli_version} (${release_date})"
-		}
-		[ $(uname -o) = "GNU/Linux" ] && {
-		  echo "OS: GNU/Linux"
-	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
-	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+	  [ $(uname) = "Darwin" ] &&  {
+      echo "OS: OSX / Darwin"
+      rm -f /tmp/AWSCLIV2.pkg
+      echo "Downloading AWS CLI v2..."
+      latest_cli_version=$($CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
+      $TAR_CLI xOv - 2>/dev/null | \
+      $GREP_CLI -a '<pkg-info' | \
+      $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
+      release_date=$($CURL_CLI -sI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
+          $GREP_CLI 'Last-Modified' | $CUT_CLI -d':' -f 2- | $TR_CLI '\r\n' ' ')
+      echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+      echo "    New version: aws-cli/${latest_cli_version} (${release_date})"
+    }
+    [ $(uname) = "Linux" ] && {
+      echo "OS: Linux"
+      echo "Downloading AWS CLI v2..."
+      $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+      $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
+      echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
       echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
-		  rm -rf /tmp/aws/ 2> /dev/null
+      rm -rf /tmp/aws/ 2> /dev/null
 		}
   }; f
 
@@ -108,20 +109,33 @@ check-upgrade =
 # Usage: update-aliases
 update-aliases =
     !f() {
-        CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
-        if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
-            echo "~/.aws/cli/alias successfully updated"
-        else
-            echo "ERROR: There was a problem updating ~/.aws/cli/alias"
-        fi
+      CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+      if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
+          echo "~/.aws/cli/alias successfully updated"
+      else
+          echo "ERROR: There was a problem updating ~/.aws/cli/alias"
+      fi
     }; f
 
 # Install and check all prerequisites
 # https://github.com/rhyeal/aws-rotate-iam-keys
 install =
   !f() {
+	  [ $(uname) = "Darwin" ] &&  {
+      echo "OS: OSX / Darwin"
+      BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" ; return 1 ; }
+      BREW_CLI=$(which jq) || { echo "WARNING: jq not installed, installing via brew..." ; $(brew install jq) ; }
+    }
+    [ $(uname) = "Linux" ] && {
+      echo "OS: Linux"
+      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed.  Please install jq and re-run \"aws install\"." ; return 1 ; }
+		}
+
+    CHMOD_CLI=$(which chmod) || { echo "ERROR: chmod not found in path." ; return 1 ; }
     AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed.  Please install jq and re-run \"aws install\"." ; return 1 ; }
+    FIND_CLI=$(which find) || { echo "ERROR: find not installed.  Please install find and re-run \"aws install\"." ; return 1 ; }
+    SORT_CLI=$(which sort) || { echo "ERROR: sort not installed.  Please install sort and re-run \"aws install\"." ; return 1 ; }
+    HEAD_CLI=$(which head) || { echo "ERROR: head not installed.  Please install head and re-run \"aws install\"." ; return 1 ; }
     SED_CLI=$(which sed) || { echo "ERROR: sed not installed.  Please install sed and re-run \"aws install\"." ; return 1 ; }
     GREP_CLI=$(which grep) || { echo "ERROR: grep not installed.  Please install grep and re-run \"aws install\"." ; return 1 ; }
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed.  Please install cut and re-run \"aws install\"." ; return 1 ; }
@@ -138,7 +152,7 @@ install =
 
     # Install aws-rotate-iam keys script from GitHub
     $CURL_CLI -s "https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys" -o ~/.aws/cli/aws-rotate-iam-keys
-    chmod a+x ~/.aws/cli/aws-rotate-iam-keys
+    $CHMOD_CLI a+x ~/.aws/cli/aws-rotate-iam-keys 2> /dev/null
 
     if [ -x ~/.aws/cli/aws-rotate-iam-keys ]; then
       echo "aws-rotate-iam-keys successfully installed"
@@ -147,9 +161,22 @@ install =
     fi
 
     # Install aws-mfa Python script using pip3
-    pip3 install --user --upgrade aws-mfa > /dev/null 2>&1
-    AWS_MFA_CLI=$(which aws-mfa) || { echo "ERROR: mfa not installed." ; return 1 ; }
-    echo "SUCCESS: aws-mfa installed"
+    $PIP3_CLI install --user --upgrade aws-mfa > /dev/null 2>&1
+
+    # Darwin/OSX typical location
+    [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
+    # Linux typical location
+    [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
+
+    # Find the aws-mfa local binary
+    AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
+    [ -x $AWS_MFA_CLI ] && {
+      echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
+    }
+    [ -x $AWS_MFA_CLI ] || {
+      echo "ERROR: aws-mfa not found."
+      return 1
+    }
 
     # Update to the latest version of the aliases
     if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
@@ -157,6 +184,7 @@ install =
     else
         echo "ERROR: There was a problem updating ~/.aws/cli/alias"
     fi
+
   }; f
 
 # Rotate IAM long term credentials
@@ -196,21 +224,18 @@ iam-keys-days-remaining =
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
     DATE_CLI=$(which date) || { echo "ERROR: date not installed." ; return 1 ; }
     REV_CLI=$(which rev) || { echo "ERROR: rev not installed." ; return 1 ; }
-
     AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
 
     # Set your aws username
     USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g')
-    echo USERNAME=$USERNAME
 
     # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
     CDATE=$($AWS_CLI iam list-access-keys --output json --user-name ${USERNAME} | $GREP_CLI CreateDate | $CUT_CLI -c 28- | $REV_CLI | $CUT_CLI -c 8- | $REV_CLI |  $SED_CLI -E s/T/\ /g)
 
     # Use different code based on the OS, since Darwin uses a different version of the date command
-    [ "$OSTYPE" = "darwin"* ] &&  {
-        echo "Running Darwin version"
+    [ $(uname) = "Darwin" ] &&  {
         # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
-        CDATESTRING=$(date -jf "%Y-%m-%d %T" "${CDATE}")
+        CDATESTRING=$($DATE_CLI -jf "%Y-%m-%d %T" "${CDATE}")
 
         # Get the expiriation date by adding 60 days to the create date
         EXDATE=$($DATE_CLI -jf "%Y-%m-%d %T" -v +60d "${CDATE}" "+%s")
@@ -220,11 +245,9 @@ iam-keys-days-remaining =
         DAYSTOEXPIRE=$((($EXDATE - $NOW)/86400))
     }
     # Linux / GNU Code
-    [ $(uname -o) = "GNU/Linux" ] && {
-        echo "Running Linux version"
-
+    [ $(uname) = "Linux" ] && {
         # Get the expiriation date by adding 60 days to the create date
-        EXDATE=$(date +"%s" -d"$(date +"%Y-%m-%d+60 days %T" -d"$CDATE")")
+        EXDATE=$($DATE_CLI +"%s" -d"$($DATE_CLI +"%Y-%m-%d+60 days %T" -d"$CDATE")")
 
         # Calulate the number of days between today and the expiration date
         NOW=$($DATE_CLI +"%s")
@@ -246,14 +269,28 @@ iam-keys-days-remaining =
 # Usage: aws mfa [profile]
 mfa =
   !f() {
+    SORT_CLI=$(which sort) || { echo "ERROR: sort not installed." ; return 1 ; }
+    HEAD_CLI=$(which head) || { echo "ERROR: head not installed." ; return 1 ; }
+    FIND_CLI=$(which find) || { echo "ERROR: find not installed." ; return 1 ; }
+
     [ "$AWS_DEFAULT_PROFILE" ]  && PROFILE=$AWS_DEFAULT_PROFILE
     [ "$AWS_PROFILE" ]          && PROFILE=$AWS_PROFILE
-    AWS_MFA_CLI=$(which aws-mfa) ||
-        {
-            echo "ERROR: aws-mfa not installed."
-            echo "Use \"pip install aws-mfa\" to install."
-            return 1
-        }
+
+    # Darwin/OSX typical location
+    [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
+
+    # Linux typical location
+    [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
+
+    # Find the aws-mfa local binary
+    AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
+    [ -x $AWS_MFA_CLI ] && {
+      echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
+    }
+    [ -x $AWS_MFA_CLI ] || {
+      echo "ERROR: aws-mfa not found."
+      return 1
+    }
 
     [ "${1}" ]    && $AWS_MFA_CLI  --duration 129600 --profile $1
     [ -z "${1}" ] && [ -z "$PROFILE" ] &&
