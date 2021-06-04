@@ -69,6 +69,7 @@ upgrade =
 		}
   }; f
 
+# Check for the latest version of the AWS CLI v2
 # Usage: aws check-upgrade
 check-upgrade =
   !f() {
@@ -102,6 +103,18 @@ check-upgrade =
 		  rm -rf /tmp/aws/ 2> /dev/null
 		}
   }; f
+
+# Update to the latest aliases file
+# Usage: update-aliases
+update-aliases =
+    !f() {
+        CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+        if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
+            echo "~/.aws/cli/alias successfully updated"
+        else
+            echo "ERROR: There was a problem updating ~/.aws/cli/alias"
+        fi
+    }; f
 
 # Install or upgrade aws-rotate-iam-keys
 # https://github.com/rhyeal/aws-rotate-iam-keys
