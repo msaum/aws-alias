@@ -116,11 +116,27 @@ update-aliases =
         fi
     }; f
 
-# Install or upgrade aws-rotate-iam-keys
+# Install and check all prerequisites
 # https://github.com/rhyeal/aws-rotate-iam-keys
-install-rotate-iam-keys =
+install =
   !f() {
-    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed.  Please install jq and re-run \"aws install\"." ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed.  Please install sed and re-run \"aws install\"." ; return 1 ; }
+    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed.  Please install grep and re-run \"aws install\"." ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed.  Please install cut and re-run \"aws install\"." ; return 1 ; }
+    DATE_CLI=$(which date) || { echo "ERROR: date not installed.  Please install date and re-run \"aws install\"." ; return 1 ; }
+    REV_CLI=$(which rev) || { echo "ERROR: rev not installed.  Please install rev and re-run \"aws install\"." ; return 1 ; }
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed.  Please install curl and re-run \"aws install\"." ; return 1 ; }
+    PIP3_CLI=$(which pip3) || { echo "ERROR: pip3 not installed.  Please install pip3 and re-run \"aws install\"." ; return 1 ; }
+    GETOPT_CLI=$(which getopt) ||
+    {
+        echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."
+        echo "If you are on Mac OSX, use brew to install \"gn--getopt\". https://formulae.brew.sh/formula/gnu-getopt"
+        return 1
+    }
+
+    # Install aws-rotate-iam keys script from GitHub
     $CURL_CLI -s "https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys" -o ~/.aws/cli/aws-rotate-iam-keys
     chmod a+x ~/.aws/cli/aws-rotate-iam-keys
 
@@ -129,9 +145,21 @@ install-rotate-iam-keys =
     else
       echo "There was an error installing aws-rotate-iam-keys"
     fi
-    }; f
 
-# Install or upgrade aws-rotate-iam-keys
+    # Install aws-mfa Python script using pip3
+    pip3 install --user --upgrade aws-mfa > /dev/null 2>&1
+    AWS_MFA_CLI=$(which aws-mfa) || { echo "ERROR: mfa not installed." ; return 1 ; }
+    echo "SUCCESS: aws-mfa installed"
+
+    # Update to the latest version of the aliases
+    if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
+        echo "~/.aws/cli/alias successfully updated"
+    else
+        echo "ERROR: There was a problem updating ~/.aws/cli/alias"
+    fi
+  }; f
+
+# Rotate IAM long term credentials
 # https://github.com/rhyeal/aws-rotate-iam-keys
 rotate-iam-keys =
   !f() {
@@ -237,16 +265,6 @@ mfa =
     [ -z "${1}" ] && $AWS_MFA_CLI  --duration 129600 --profile $PROFILE
 
   }; f
-
-# Prerequisites:
-#   - Python3 and pip3 which should already be installed as a part of the AWS CLI v2
-# Usage: aws install-mfa
-install-mfa =
-    !f() {
-        pip3 install --user --upgrade aws-mfa > /dev/null 2>&1
-        AWS_MFA_CLI=$(which aws-mfa) || { echo "ERROR: mfa not installed." ; return 1 ; }
-        echo "SUCCESS: aws-mfa installed"
-    }; f
 
 ###########
 ### IAM ###
