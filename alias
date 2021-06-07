@@ -106,11 +106,11 @@ update-aliases =
         echo "Unable to download https://raw.githubusercontent.com/msaum/aws-alias/master/alias"
         return 1
       fi
-      if [ ! $($CMP_CLI -s ${HOME}/.aws/cli/alias ${HOME}/.aws/cli/alias.$$) ]; then
+      if $CMP_CLI -s ${HOME}/.aws/cli/alias ${HOME}/.aws/cli/alias.$$; then
+        echo "Files are are the same, not updating."
+      else
         echo "Files are different, updating ${HOME}/.aws/cli/alias"
         mv -f ${HOME}/.aws/cli/alias.$$ ${HOME}/.aws/cli/alias
-      else
-        echo "Files are are the same, not updating."
       fi
     }; f
 
