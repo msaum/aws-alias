@@ -163,8 +163,6 @@ install =
     fi
     $CHMOD_CLI a+x ${HOME}/.aws/cli/aws-rotate-iam-keys 2> /dev/null
 
-
-
     if [ -x ${HOME}/.aws/cli/aws-rotate-iam-keys ]; then
       echo "aws-rotate-iam-keys successfully installed"
     else
