@@ -122,11 +122,13 @@ install =
 	  [ $($UNAME_CLI) = "Darwin" ] &&  {
       echo "OS: OSX / Darwin"
       BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" ; return 1 ; }
-      BREW_CLI=$(which jq) || { echo "WARNING: jq not installed, installing via brew..." ; $(brew install jq) ; }
+      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, please install with \"brew install jq\"." ;  }
+      JP_CLI=$(which jp) || { echo "ERROR: jp not installed, please install with \"brew install jp\"" ;  }
     }
     [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
-      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed.  Please install jq and re-run \"aws install\"." ; return 1 ; }
+      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, installing" ; sudo apt update ; sudo apt install -y jq ; }
+      JP_CLI=$(which jp) || { echo "ERROR: jp not installed, installing" ; sudo apt update ; sudo apt install -y jp ; }
 		}
 
     CHMOD_CLI=$(which chmod) || { echo "ERROR: chmod not found in path." ; return 1 ; }
@@ -336,7 +338,9 @@ whoami = sts get-caller-identity
 
 create-assume-role =
   !f() {
-    aws iam create-role --role-name "${1}" \
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+
+    ${AWS_CLI} iam create-role --role-name "${1}" \
       --assume-role-policy-document \
         "{\"Statement\":[{\
             \"Action\":\"sts:AssumeRole\",\
@@ -353,10 +357,11 @@ create-assume-role =
 # Note: If there are a lot of IAM users, this may take some time to run
 find-access-key =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
     clear_to_eol=$(tput el)
-    for i in $(aws iam list-users --query "Users[].UserName" --output text); do
+    for i in $($AWS_CLI iam list-users --query "Users[].UserName" --output text); do
       printf "\r%sSearching...$i" "${clear_to_eol}"
-      result=$(aws iam list-access-keys --output text --user-name "${i}" --query "AccessKeyMetadata[?AccessKeyId=='${1}'].UserName";)
+      result=$($AWS_CLI iam list-access-keys --output text --user-name "${i}" --query "AccessKeyMetadata[?AccessKeyId=='${1}'].UserName";)
       if [ -n "${result}" ]; then
          printf "\r%s%s is owned by %s.\n" "${lear_to_eol}" "$1" "${result}"
          break
@@ -375,15 +380,17 @@ list-iam-users = iam list-users --query "Users[].UserName" --output table
 # Usage: aws list-user-keys <username>
 list-user-keys =
   !f() {
-    aws iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId";
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    $AWS_CLI iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId";
   }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws list-virtual-mfa [username]
 list-virtual-mfa =
   !f() {
-    [ "${1}" ]    && aws iam list-mfa-devices --user-name ${1} | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
-    [ -z "${1}" ] && aws iam list-mfa-devices | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    [ "${1}" ]    && $AWS_CLI iam list-mfa-devices --user-name ${1} | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
+    [ -z "${1}" ] && $AWS_CLI iam list-mfa-devices | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
   }; f
 
 
@@ -392,8 +399,9 @@ list-virtual-mfa =
 # Usage: aws delete-virtual-mfa <username>
 delete-virtual-mfa =
   !f() {
-    account_id=$(aws sts get-caller-identity --output json | jq -r '.Account')
-    aws iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    account_id=$($AWS_CLI sts get-caller-identity --output json | jq -r '.Account')
+    $AWS_CLI iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
   }; f
 
 # Find users without mfa
@@ -402,9 +410,10 @@ delete-virtual-mfa =
 # Usage: aws find-users-without-mfa
 find-users-without-mfa =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
     echo "Users withouth MFA enabled:"
-    for i in $(aws iam list-users --query "Users[?PasswordLastUsed].UserName" --output text); do
-      result=$(aws iam list-virtual-mfa-devices --query "length(VirtualMFADevices[?User.UserName=='${i}'])")
+    for i in $($AWS_CLI iam list-users --query "Users[?PasswordLastUsed].UserName" --output text); do
+      result=$($AWS_CLI iam list-virtual-mfa-devices --query "length(VirtualMFADevices[?User.UserName=='${i}'])")
       if [ "${result}" -eq "0" ]; then
         echo "${i}"
       fi
@@ -413,11 +422,12 @@ find-users-without-mfa =
 
 generate-sts-token =
   !f() {
-    user_arn=$(aws whoami | jq -r .Arn)
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    user_arn=$($AWS_CLI whoami | jq -r .Arn)
     duration=${1:-129600}
     session_data=$(aws sts get-session-token --duration-seconds $duration)
     echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
-    echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
+    echo "export AWS_DEFAULT_REGION=$($AWS_CLI configure get region)"
     echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | jq -r .Credentials.AccessKeyId)"
     echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | jq -r .Credentials.SecretAccessKey)"
     echo "export AWS_SESSION_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
@@ -426,7 +436,8 @@ generate-sts-token =
 
 assume =
   !f() {
-    res=$(aws sts assume-role --role-arn ${1} --role-session-name session)
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    res=$($AWS_CLI sts assume-role --role-arn ${1} --role-session-name session)
     if echo $res | grep -q AccessKeyId; then
         echo $res \
         | jq -r '
@@ -479,13 +490,14 @@ list-sgs = ec2 describe-security-groups --query "SecurityGroups[].[GroupId, Grou
 # Usage: aws sg-rules <security group id>
 sg-rules =
   !f() {
-  [ -z "${1}" ] &&
-        {
-          echo "Security group id not given"
-          echo "Usage: aws sg-rules <security group id>"
-          return 1
-        }
-    aws ec2 describe-security-groups \
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    [ -z "${1}" ] &&
+    {
+      echo "Security group id not given"
+      echo "Usage: aws sg-rules <security group id>"
+      return 1
+    }
+    $AWS_CLI ec2 describe-security-groups \
     --query "SecurityGroups[].IpPermissions[].[FromPort,ToPort,IpProtocol,join(',',IpRanges[].CidrIp)]" \
     --group-id "$1" --output text;
   }; f
@@ -495,19 +507,21 @@ sg-rules =
 # Usage: Usage: aws get-group-id <security group name>
 get-group-id =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
     [ -z "${1}" ] &&
           {
             echo "Security group name not given"
             echo "Usage: aws get-group-id <security group name>"
             return 1
           }
-    aws ec2 describe-security-groups --filters Name=group-name,Values=${1} --query SecurityGroups[0].GroupId --output text
+    $AWS_CLI ec2 describe-security-groups --filters Name=group-name,Values=${1} --query SecurityGroups[0].GroupId --output text
   }; f
 
 authorize-my-ip-by-name =
   !f() {
-    group_id=$(aws get-group-id "${1}")
-    aws authorize-my-ip "$group_id"
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    group_id=$($AWS_CLI get-group-id "${1}")
+    $AWS_CLI authorize-my-ip "$group_id"
   }; f
 
 # list all security group port ranges open to 0.0.0.0/0
@@ -529,29 +543,34 @@ public-ports = ec2 describe-security-groups \
 # Usage: aws myip
 myip =
   !f() {
-    curl https://checkip.amazonaws.com
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+    $CURL_CLI https://checkip.amazonaws.com
   }; f
 
 #allow-my-ip =
   !f() {
-    my_ip=$(aws myip)
-    aws ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    my_ip=$($AWS_CLI myip)
+    $AWS_CLI ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
   }; f
 
 #revoke-my-ip =
   !f() {
-    my_ip=$(aws myip)
-    aws ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    my_ip=$($AWS_CLI myip)
+    $AWS_CLI ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
   }; f
 
 #allow-my-ip-all =
   !f() {
-    aws allow-my-ip ${1} all all
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    $AWS_CLI allow-my-ip ${1} all all
   }; f
 
 #revoke-my-ip-all =
   !f() {
-    aws revoke-my-ip ${1} all all
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    $AWS_CLI revoke-my-ip ${1} all all
   }; f
 
 # Delete an AMI
@@ -559,27 +578,35 @@ myip =
 # Usage: aws delete-ami <AMI ID>
 delete-ami =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
     [ -z "${1}" ] &&
           {
             echo "AMI ID not given"
             echo "Usage: aws delete-ami <AMI ID>"
             return 1
           }
-    snapshots=($(aws ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
-    aws ec2 deregister-image --image-id $1
+    snapshots=($($AWS_CLI ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
+    $AWS_CLI ec2 deregister-image --image-id $1
     for id in $snapshots
     do
-      aws ec2 delete-snapshot --snapshot-id ${id}
+      $AWS_CLI ec2 delete-snapshot --snapshot-id ${id}
     done
   }; f
 
 list-instances =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    [ -z "${1}" ] &&
+          {
+            echo "Region not given"
+            echo "Usage: aws list-instances region"
+            return 1
+          }
     echo "Filtering by \`$1\`"
-    for region in $(aws ec2 describe-regions --query "Regions[*].RegionName" --output text | tr "\t" "\n" | grep "$1")
+    for region in $($AWS_CLI ec2 describe-regions --query "Regions[*].RegionName" --output text | tr "\t" "\n" | grep "$1")
       do
         echo "\nListing Instances in region:'$region'..."
-        aws ec2 describe-instances --region $region \
+        $AWS_CLI ec2 describe-instances --region $region \
         --output table \
         --query "Reservations[*].Instances[*].{
                 Instance:InstanceId,
@@ -734,6 +761,11 @@ get-instance-id-from-dns =
 ################
 ## Cloudwatch ##
 ################
+
+log-groups =
+  !f() {
+      aws logs describe-log-groups | jq '.logGroups[].logGroupName'  | sed 's/\"//g'
+  }; f
 
 last-log =
   !f() {
