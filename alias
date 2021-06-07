@@ -163,19 +163,22 @@ install =
     # Install aws-mfa Python script using pip3
     $PIP3_CLI install --user --upgrade aws-mfa > /dev/null 2>&1
 
-    # Darwin/OSX typical location
-    [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
-    # Linux typical location
-    [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
-
-    # Find the aws-mfa local binary
-    AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
-    [ -x $AWS_MFA_CLI ] && {
-      echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
-    }
-    [ -x $AWS_MFA_CLI ] || {
-      echo "ERROR: aws-mfa not found."
-      return 1
+    AWS_MFA_CLI=$(which aws-mfa) ||
+    {
+      # Find the aws-mfa local binary in the usual places
+      # Darwin/OSX typical location
+      [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
+      # Linux typical location
+      [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
+      # Look for the aws-mfa binary
+      AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
+      [ -x $AWS_MFA_CLI ] && {
+        echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
+      }
+      [ -x $AWS_MFA_CLI ] || {
+        echo "ERROR: aws-mfa not found."
+        return 1
+      }
     }
 
     # Update to the latest version of the aliases
@@ -276,20 +279,22 @@ mfa =
     [ "$AWS_DEFAULT_PROFILE" ]  && PROFILE=$AWS_DEFAULT_PROFILE
     [ "$AWS_PROFILE" ]          && PROFILE=$AWS_PROFILE
 
-    # Darwin/OSX typical location
-    [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
-
-    # Linux typical location
-    [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
-
-    # Find the aws-mfa local binary
-    AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
-    [ -x $AWS_MFA_CLI ] && {
-      echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
-    }
-    [ -x $AWS_MFA_CLI ] || {
-      echo "ERROR: aws-mfa not found."
-      return 1
+    AWS_MFA_CLI=$(which aws-mfa) ||
+    {
+      # Find the aws-mfa local binary in the usual places
+      # Darwin/OSX typical location
+      [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
+      # Linux typical location
+      [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
+      # Look for the aws-mfa binary
+      AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
+      [ -x $AWS_MFA_CLI ] && {
+        echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
+      }
+      [ -x $AWS_MFA_CLI ] || {
+        echo "ERROR: aws-mfa not found."
+        return 1
+      }
     }
 
     [ "${1}" ]    && $AWS_MFA_CLI  --duration 129600 --profile $1
