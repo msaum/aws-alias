@@ -53,21 +53,35 @@ upgrade =
 	    echo "OS: OSX / Darwin"
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
 	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
+      $CURL_CLI --fail -sS https://awscli.amazonaws.com/AWSCLIV2.pkg -o /tmp/AWSCLIV2.pkg
+      if [ ! -f  "/tmp/AWSCLIV2.pkg" ]; then
+        echo "ERROR: Unable to download: https://awscli.amazonaws.com/AWSCLIV2.pkg"
+        return 1
+      fi
       $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
       rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
-	    echo "New version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+	    echo "    New version $(aws --version | $CUT_CLI -d' ' -f 1)"
     }
     [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
 		  rm -f /tmp/awscliv2.zip 2> /dev/null
 		  rm -rf /tmp/aws/ 2> /dev/null
 	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+      if [ ! -f  "/tmp/awscliv2.zip" ]; then
+        echo "ERROR: Unable to download: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+        return 1
+      fi
 	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
-	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
-	    echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
-	    $SUDO_CLI /tmp/aws/install --update
+	    CURRENT_VER=$(aws --version | $CUT_CLI -d' ' -f 1)
+	    NEW_VER=$(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)
+	    echo "Current version: $CURRENT_VER"
+	    echo "    New version: $NEW_VER"
+	    if [ "${CURRENT_VER}" = "${NEW_VER}" ]; then
+	      echo "Versions are the same, no changes."
+	    else
+  	    $SUDO_CLI /tmp/aws/install --update
+      fi
 		  rm -rf /tmp/aws/ 2> /dev/null
 		}
   }; f
@@ -87,25 +101,43 @@ check-upgrade =
 
 	  [ $($UNAME_CLI) = "Darwin" ] &&  {
       echo "OS: OSX / Darwin"
-      rm -f /tmp/AWSCLIV2.pkg
+		  rm -rf /tmp/AWSCLIV2.pkg 2> /dev/null
       echo "Downloading AWS CLI v2..."
-      latest_cli_version=$($CURL_CLI -s "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o - | \
-      $TAR_CLI xOv - 2>/dev/null | \
-      $GREP_CLI -a '<pkg-info' | \
-      $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
-      release_date=$($CURL_CLI -sI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
+	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
+      if [ ! -f  "/tmp/AWSCLIV2.pkg" ]; then
+        echo "ERROR: Unable to download: https://awscli.amazonaws.com/AWSCLIV2.pkg"
+        return 1
+      fi
+      LATEST_CLI_VERSION=$(cat /tmp/AWSCLIV2.pkg | \
+        $TAR_CLI xOv - 2>/dev/null | \
+        $GREP_CLI -a '<pkg-info' | \
+        $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
+      RELEASE_DATE=$($CURL_CLI -sSI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
           $GREP_CLI 'Last-Modified' | $CUT_CLI -d':' -f 2- | $TR_CLI '\r\n' ' ')
       echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
-      echo "    New version: aws-cli/${latest_cli_version} (${release_date})"
+      echo "    New version: aws-cli/${LATEST_CLI_VERSION} (${RELEASE_DATE})"
+		  #rm -rf /tmp/AWSCLIV2.pkg  2> /dev/null
+		  return 0
     }
     [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
-      echo "Downloading AWS CLI v2..."
-      $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-      $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
-      echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
-      echo "    New version: $(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)"
-      rm -rf /tmp/aws/ 2> /dev/null
+      rm -rf /tmp/awscliv2.zip /tmp/aws/ 2> /dev/null
+	    echo "Downloading AWS CLI v2..."
+	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+      if [ ! -f  "/tmp/awscliv2.zip" ]; then
+        echo "ERROR: Unable to download: https://awscli.amazonaws.com/awscliv2.zip"
+        return 1
+      fi
+	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
+	    CURRENT_VER=$(aws --version | $CUT_CLI -d' ' -f 1)
+	    NEW_VER=$(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)
+	    echo "Current version: $CURRENT_VER"
+	    echo "    New version: $NEW_VER"
+	    if [ "${CURRENT_VER}" = "${NEW_VER}" ]; then
+	      echo "Versions are the same"
+      fi
+		  rm -rf /tmp/awscliv2.zip /tmp/aws/ 2> /dev/null
+		  return 0
 		}
   }; f
 
@@ -114,10 +146,20 @@ check-upgrade =
 update-aliases =
     !f() {
       CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
-      if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
-          echo "~/.aws/cli/alias successfully updated"
+      CMP_CLI=$(which cmp) || { echo "ERROR: CMP not installed." ; return 1 ; }
+
+      $CURL_CLI --fail -sS https://raw.githubusercontent.com/msaum/aws-alias/master/alias -o ${HOME}/.aws/cli/alias.$$
+      if [ -f  "${HOME}/.aws/cli/alias.$$" ]; then
+        echo "Downloaded https://raw.githubusercontent.com/msaum/aws-alias/master/alias"
       else
-          echo "ERROR: There was a problem updating ~/.aws/cli/alias"
+        echo "Unable to download https://raw.githubusercontent.com/msaum/aws-alias/master/alias"
+        return 1
+      fi
+      if [ "$CMP_CLI ${HOME}/.aws/cli/alias ${HOME}/.aws/cli/alias.$$" ]; then
+        echo "Files are different, updating ${HOME}/.aws/cli/alias"
+        mv -f ${HOME}/.aws/cli/alias.$$ ${HOME}/.aws/cli/alias
+      else
+        echo "Files are are the same, not updating."
       fi
     }; f
 
@@ -149,6 +191,7 @@ install =
     REV_CLI=$(which rev) || { echo "ERROR: rev not installed.  Please install rev and re-run \"aws install\"." ; return 1 ; }
     CURL_CLI=$(which curl) || { echo "ERROR: curl not installed.  Please install curl and re-run \"aws install\"." ; return 1 ; }
     PIP3_CLI=$(which pip3) || { echo "ERROR: pip3 not installed.  Please install pip3 and re-run \"aws install\"." ; return 1 ; }
+    CMP_CLI=$(which cmp) || { echo "ERROR: CMP not installed." ; return 1 ; }
     GETOPT_CLI=$(which getopt) ||
     {
         echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."
@@ -157,10 +200,20 @@ install =
     }
 
     # Install aws-rotate-iam keys script from GitHub
-    $CURL_CLI -s "https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys" -o ~/.aws/cli/aws-rotate-iam-keys
-    $CHMOD_CLI a+x ~/.aws/cli/aws-rotate-iam-keys 2> /dev/null
+    $CURL_CLI --fail -sS \
+      https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys \
+      -o ${HOME}/.aws/cli/aws-rotate-iam-keys
+    if [ -f  "${HOME}/.aws/cli/aws-rotate-iam-keys" ]; then
+      echo "Downloaded https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys"
+    else
+      echo "Unable to download https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys"
+      return 1
+    fi
+    $CHMOD_CLI a+x ${HOME}/.aws/cli/aws-rotate-iam-keys 2> /dev/null
 
-    if [ -x ~/.aws/cli/aws-rotate-iam-keys ]; then
+
+
+    if [ -x ${HOME}/.aws/cli/aws-rotate-iam-keys ]; then
       echo "aws-rotate-iam-keys successfully installed"
     else
       echo "There was an error installing aws-rotate-iam-keys"
@@ -173,9 +226,9 @@ install =
     {
       # Find the aws-mfa local binary in the usual places
       # Darwin/OSX typical location
-      [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
+      [ -d ${HOME}/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ${HOME}/Library) ; }
       # Linux typical location
-      [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
+      [ -d ${HOME}/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ${HOME}/.local) ; }
       # Look for the aws-mfa binary
       AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
       [ -x $AWS_MFA_CLI ] && {
@@ -188,10 +241,18 @@ install =
     }
 
     # Update to the latest version of the aliases
-    if [ "$CURL_CLI -s -o ~/.aws/cli/alias https://raw.githubusercontent.com/msaum/aws-alias/master/alias" ]; then
-        echo "~/.aws/cli/alias successfully updated"
+    $CURL_CLI --fail -sS https://raw.githubusercontent.com/msaum/aws-alias/master/alias -o ${HOME}/.aws/cli/alias.$$
+    if [ -f  "${HOME}/.aws/cli/alias.$$" ]; then
+      echo "Downloaded https://raw.githubusercontent.com/msaum/aws-alias/master/alias"
     else
-        echo "ERROR: There was a problem updating ~/.aws/cli/alias"
+      echo "Unable to download https://raw.githubusercontent.com/msaum/aws-alias/master/alias"
+      return 1
+    fi
+    if [ "$CMP_CLI ${HOME}/.aws/cli/alias ${HOME}/.aws/cli/alias.$$" ]; then
+      echo "Files are different, updating ${HOME}/.aws/cli/alias"
+      mv -f ${HOME}/.aws/cli/alias.$$ ${HOME}/.aws/cli/alias
+    else
+      echo "Files are are the same, not updating."
     fi
 
   }; f
@@ -208,8 +269,8 @@ rotate-iam-keys =
         echo "Usage: aws rotate-iam-keys <profile-long-term>"
         return 1 ;
     else
-        echo ~/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
-        ~/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
+        echo ${HOME}/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
+        ${HOME}/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
     fi
     }; f
 
@@ -242,7 +303,7 @@ iam-keys-days-remaining =
     # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
     CDATE=$($AWS_CLI iam list-access-keys --output json --user-name ${USERNAME} | $GREP_CLI CreateDate | $CUT_CLI -c 28- | $REV_CLI | $CUT_CLI -c 8- | $REV_CLI |  $SED_CLI -E s/T/\ /g)
 
-    # Use different code based on the OS, since Darwin uses a different version of the date command
+    # Use CMPerent code based on the OS, since Darwin uses a CMPerent version of the date command
     [ $($UNAME_CLI) = "Darwin" ] &&  {
         # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
         CDATESTRING=$($DATE_CLI -jf "%Y-%m-%d %T" "${CDATE}")
@@ -290,9 +351,9 @@ mfa =
     {
       # Find the aws-mfa local binary in the usual places
       # Darwin/OSX typical location
-      [ -d ~/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/Library) ; }
+      [ -d ${HOME}/Library ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ${HOME}/Library) ; }
       # Linux typical location
-      [ -d ~/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ~/.local) ; }
+      [ -d ${HOME}/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ${HOME}/.local) ; }
       # Look for the aws-mfa binary
       AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
       [ -x $AWS_MFA_CLI ] && {
@@ -400,7 +461,7 @@ find-users-without-mfa =
     done
   }; f
 
-#generate-sts-token =
+generate-sts-token =
   !f() {
     user_arn=$(aws whoami | jq -r .Arn)
     duration=${1:-129600}
@@ -413,7 +474,7 @@ find-users-without-mfa =
     echo "export AWS_SECURITY_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
   }; f
 
-#assume =
+assume =
   !f() {
     res=$(aws sts assume-role --role-arn ${1} --role-session-name session)
     if echo $res | grep -q AccessKeyId; then
@@ -425,7 +486,7 @@ find-users-without-mfa =
         "aws_session_token     = \(.Credentials.SessionToken)",
         "aws_security_token    = \(.Credentials.SessionToken)"
         ' \
-        >> ~/.aws/credentials
+        >> ${HOME}/.aws/credentials
         echo $res | jq -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
     fi
   }; f
@@ -493,11 +554,11 @@ get-group-id =
     aws ec2 describe-security-groups --filters Name=group-name,Values=${1} --query SecurityGroups[0].GroupId --output text
   }; f
 
-#authorize-my-ip-by-name =
-#  !f() {
-#    group_id=$(aws get-group-id "${1}")
-#    aws authorize-my-ip "$group_id"
-#  }; f
+authorize-my-ip-by-name =
+  !f() {
+    group_id=$(aws get-group-id "${1}")
+    aws authorize-my-ip "$group_id"
+  }; f
 
 # list all security group port ranges open to 0.0.0.0/0
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
@@ -751,3 +812,5 @@ docker-ecr-login =
     passwd=$(aws ecr get-authorization-token --region $region --output text --query authorizationData[].authorizationToken | base64 --decode | cut -d: -f2)
     docker login -u AWS -p $passwd $endpoint
   }; f
+
+
