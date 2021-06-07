@@ -47,7 +47,9 @@ upgrade =
     UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
     SUDO_CLI=$(which sudo) || { echo "ERROR: sudo not installed." ; return 1 ; }
-    [ $(uname) = "Darwin" ] &&  {
+    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
+
+    [ $($UNAME_CLI) = "Darwin" ] &&  {
 	    echo "OS: OSX / Darwin"
 	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
 	    echo "Downloading AWS CLI v2..."
@@ -56,7 +58,7 @@ upgrade =
       rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
 	    echo "New version: $(aws --version | $CUT_CLI -d' ' -f 1)"
     }
-    [ $(uname) = "Linux" ] && {
+    [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
 		  rm -f /tmp/awscliv2.zip 2> /dev/null
 		  rm -rf /tmp/aws/ 2> /dev/null
@@ -81,7 +83,9 @@ check-upgrade =
     GREP_CLI=$(which grep) || { echo "ERROR: grep not installed." ; return 1 ; }
     CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
     TR_CLI=$(which tr) || { echo "ERROR: tr not installed." ; return 1 ; }
-	  [ $(uname) = "Darwin" ] &&  {
+    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
+
+	  [ $($UNAME_CLI) = "Darwin" ] &&  {
       echo "OS: OSX / Darwin"
       rm -f /tmp/AWSCLIV2.pkg
       echo "Downloading AWS CLI v2..."
@@ -94,7 +98,7 @@ check-upgrade =
       echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
       echo "    New version: aws-cli/${latest_cli_version} (${release_date})"
     }
-    [ $(uname) = "Linux" ] && {
+    [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
       echo "Downloading AWS CLI v2..."
       $CURL_CLI -s "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
@@ -121,12 +125,14 @@ update-aliases =
 # https://github.com/rhyeal/aws-rotate-iam-keys
 install =
   !f() {
-	  [ $(uname) = "Darwin" ] &&  {
+    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
+
+	  [ $($UNAME_CLI) = "Darwin" ] &&  {
       echo "OS: OSX / Darwin"
       BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" ; return 1 ; }
       BREW_CLI=$(which jq) || { echo "WARNING: jq not installed, installing via brew..." ; $(brew install jq) ; }
     }
-    [ $(uname) = "Linux" ] && {
+    [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
       JQ_CLI=$(which jq) || { echo "ERROR: jq not installed.  Please install jq and re-run \"aws install\"." ; return 1 ; }
 		}
@@ -228,6 +234,7 @@ iam-keys-days-remaining =
     DATE_CLI=$(which date) || { echo "ERROR: date not installed." ; return 1 ; }
     REV_CLI=$(which rev) || { echo "ERROR: rev not installed." ; return 1 ; }
     AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
 
     # Set your aws username
     USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g')
@@ -236,7 +243,7 @@ iam-keys-days-remaining =
     CDATE=$($AWS_CLI iam list-access-keys --output json --user-name ${USERNAME} | $GREP_CLI CreateDate | $CUT_CLI -c 28- | $REV_CLI | $CUT_CLI -c 8- | $REV_CLI |  $SED_CLI -E s/T/\ /g)
 
     # Use different code based on the OS, since Darwin uses a different version of the date command
-    [ $(uname) = "Darwin" ] &&  {
+    [ $($UNAME_CLI) = "Darwin" ] &&  {
         # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
         CDATESTRING=$($DATE_CLI -jf "%Y-%m-%d %T" "${CDATE}")
 
@@ -248,7 +255,7 @@ iam-keys-days-remaining =
         DAYSTOEXPIRE=$((($EXDATE - $NOW)/86400))
     }
     # Linux / GNU Code
-    [ $(uname) = "Linux" ] && {
+    [ $($UNAME_CLI) = "Linux" ] && {
         # Get the expiriation date by adding 60 days to the create date
         EXDATE=$($DATE_CLI +"%s" -d"$($DATE_CLI +"%Y-%m-%d+60 days %T" -d"$CDATE")")
 
@@ -316,19 +323,19 @@ mfa =
 # Usage: aws whoami
 whoami = sts get-caller-identity
 
-#create-assume-role =
-#  !f() {
-#    aws iam create-role --role-name "${1}" \
-#      --assume-role-policy-document \
-#        "{\"Statement\":[{\
-#            \"Action\":\"sts:AssumeRole\",\
-#            \"Effect\":\"Allow\",\
-#            \"Principal\":{\"Service\":\""${2}".amazonaws.com\"},\
-#            \"Sid\":\"\"\
-#          }],\
-#          \"Version\":\"2012-10-17\"\
-#        }";
-#  }; f
+create-assume-role =
+  !f() {
+    aws iam create-role --role-name "${1}" \
+      --assume-role-policy-document \
+        "{\"Statement\":[{\
+            \"Action\":\"sts:AssumeRole\",\
+            \"Effect\":\"Allow\",\
+            \"Principal\":{\"Service\":\""${2}".amazonaws.com\"},\
+            \"Sid\":\"\"\
+          }],\
+          \"Version\":\"2012-10-17\"\
+        }";
+  }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws find-access-key <access key>
@@ -394,34 +401,34 @@ find-users-without-mfa =
   }; f
 
 #generate-sts-token =
-#  !f() {
-#    user_arn=$(aws whoami | jq -r .Arn)
-#    duration=${1:-129600}
-#    session_data=$(aws sts get-session-token --duration-seconds $duration)
-#    echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
-#    echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
-#    echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | jq -r .Credentials.AccessKeyId)"
-#    echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | jq -r .Credentials.SecretAccessKey)"
-#    echo "export AWS_SESSION_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
-#    echo "export AWS_SECURITY_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
-#  }; f
+  !f() {
+    user_arn=$(aws whoami | jq -r .Arn)
+    duration=${1:-129600}
+    session_data=$(aws sts get-session-token --duration-seconds $duration)
+    echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
+    echo "export AWS_DEFAULT_REGION=$(aws configure get region)"
+    echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | jq -r .Credentials.AccessKeyId)"
+    echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | jq -r .Credentials.SecretAccessKey)"
+    echo "export AWS_SESSION_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
+    echo "export AWS_SECURITY_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
+  }; f
 
 #assume =
-#  !f() {
-#    res=$(aws sts assume-role --role-arn ${1} --role-session-name session)
-#    if echo $res | grep -q AccessKeyId; then
-#        echo $res \
-#        | jq -r '
-#        "","[\(.Credentials.AccessKeyId)]",
-#        "aws_access_key_id     = \(.Credentials.AccessKeyId)",
-#        "aws_secret_access_key = \(.Credentials.SecretAccessKey)",
-#        "aws_session_token     = \(.Credentials.SessionToken)",
-#        "aws_security_token    = \(.Credentials.SessionToken)"
-#        ' \
-#        >> ~/.aws/credentials
-#        echo $res | jq -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
-#    fi
-#  }; f
+  !f() {
+    res=$(aws sts assume-role --role-arn ${1} --role-session-name session)
+    if echo $res | grep -q AccessKeyId; then
+        echo $res \
+        | jq -r '
+        "","[\(.Credentials.AccessKeyId)]",
+        "aws_access_key_id     = \(.Credentials.AccessKeyId)",
+        "aws_secret_access_key = \(.Credentials.SecretAccessKey)",
+        "aws_session_token     = \(.Credentials.SessionToken)",
+        "aws_security_token    = \(.Credentials.SessionToken)"
+        ' \
+        >> ~/.aws/credentials
+        echo $res | jq -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
+    fi
+  }; f
 
 ###########
 ### EC2 ###
@@ -515,26 +522,26 @@ myip =
   }; f
 
 #allow-my-ip =
-#  !f() {
-#    my_ip=$(aws myip)
-#    aws ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
-#  }; f
+  !f() {
+    my_ip=$(aws myip)
+    aws ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
+  }; f
 
 #revoke-my-ip =
-#  !f() {
-#    my_ip=$(aws myip)
-#    aws ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
-#  }; f
+  !f() {
+    my_ip=$(aws myip)
+    aws ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
+  }; f
 
 #allow-my-ip-all =
-#  !f() {
-#    aws allow-my-ip ${1} all all
-#  }; f
+  !f() {
+    aws allow-my-ip ${1} all all
+  }; f
 
 #revoke-my-ip-all =
-#  !f() {
-#    aws revoke-my-ip ${1} all all
-#  }; f
+  !f() {
+    aws revoke-my-ip ${1} all all
+  }; f
 
 # Delete an AMI
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
@@ -547,12 +554,12 @@ delete-ami =
             echo "Usage: aws delete-ami <AMI ID>"
             return 1
           }
-#    snapshots=($(aws ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
-#    aws ec2 deregister-image --image-id $1
-#    for id in $snapshots
-#    do
-#      aws ec2 delete-snapshot --snapshot-id ${id}
-#    done
+    snapshots=($(aws ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
+    aws ec2 deregister-image --image-id $1
+    for id in $snapshots
+    do
+      aws ec2 delete-snapshot --snapshot-id ${id}
+    done
   }; f
 
 list-instances =
