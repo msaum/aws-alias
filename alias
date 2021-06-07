@@ -88,58 +88,8 @@ upgrade =
 
 # Check for the latest version of the AWS CLI v2
 # Usage: aws check-upgrade
-check-upgrade =
-  !f() {
-  	CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
-  	TAR_CLI=$(which tar) || { echo "ERROR: tar not installed." ; return 1 ; }
-    UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
-    SED_CLI=$(which sed) || { echo "ERROR: sed not installed." ; return 1 ; }
-    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed." ; return 1 ; }
-    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
-    TR_CLI=$(which tr) || { echo "ERROR: tr not installed." ; return 1 ; }
-    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
+# Removed, since it takes about the same amount to just upgrade the client.
 
-	  [ $($UNAME_CLI) = "Darwin" ] &&  {
-      echo "OS: OSX / Darwin"
-		  rm -rf /tmp/AWSCLIV2.pkg 2> /dev/null
-      echo "Downloading AWS CLI v2..."
-	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/AWSCLIV2.pkg" -o "/tmp/AWSCLIV2.pkg"
-      if [ ! -f  "/tmp/AWSCLIV2.pkg" ]; then
-        echo "ERROR: Unable to download: https://awscli.amazonaws.com/AWSCLIV2.pkg"
-        return 1
-      fi
-      LATEST_CLI_VERSION=$(cat /tmp/AWSCLIV2.pkg | \
-        $TAR_CLI xOv - 2>/dev/null | \
-        $GREP_CLI -a '<pkg-info' | \
-        $SED_CLI "s#.* version=\"\([0-9\.]*\)\".*#\1#")
-      RELEASE_DATE=$($CURL_CLI -sSI "https://awscli.amazonaws.com/AWSCLIV2.pkg" | \
-          $GREP_CLI 'Last-Modified' | $CUT_CLI -d':' -f 2- | $TR_CLI '\r\n' ' ')
-      echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
-      echo "    New version: aws-cli/${LATEST_CLI_VERSION} (${RELEASE_DATE})"
-		  #rm -rf /tmp/AWSCLIV2.pkg  2> /dev/null
-		  return 0
-    }
-    [ $($UNAME_CLI) = "Linux" ] && {
-      echo "OS: Linux"
-      rm -rf /tmp/awscliv2.zip /tmp/aws/ 2> /dev/null
-	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
-      if [ ! -f  "/tmp/awscliv2.zip" ]; then
-        echo "ERROR: Unable to download: https://awscli.amazonaws.com/awscliv2.zip"
-        return 1
-      fi
-	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
-	    CURRENT_VER=$(aws --version | $CUT_CLI -d' ' -f 1)
-	    NEW_VER=$(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)
-	    echo "Current version: $CURRENT_VER"
-	    echo "    New version: $NEW_VER"
-	    if [ "${CURRENT_VER}" = "${NEW_VER}" ]; then
-	      echo "Versions are the same"
-      fi
-		  rm -rf /tmp/awscliv2.zip /tmp/aws/ 2> /dev/null
-		  return 0
-		}
-  }; f
 
 # Update to the latest aliases file
 # Usage: update-aliases
