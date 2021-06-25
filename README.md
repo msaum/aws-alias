@@ -43,6 +43,13 @@ Your alias can also contain a function - which is essentially a wrapper for a sh
   }; f
 ```
 
+## References
+- https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-alias.html
+
+## Testing
+The Bats system is used for testing the aliases script.  Bats is a TAP-compliant testing framework for Bash. It provides a simple way to verify that the UNIX programs you write behave as expected.
+- https://github.com/sstephenson/bats
+
 ## Sources
 - [https://github.com/awslabs/awscli-aliases/blob/master/alias](https://github.com/awslabs/awscli-aliases/blob/master/alias) ([1](./alias#L7), [2](./alias#L12), [3](./alias#L18), [8](./alias#L65), [9](./alias#L67), [9](./alias#L81), [16](./alias#L155), [17](./alias#L160), [18](./alias#L164), [19](./alias#L175), [20](./alias#L177), [21](./alias#L184), [22](./alias#L189), [23](./alias#L196), [24](./alias#L207), [25](./alias#L212), [26](./alias#L218), [27](./alias#L224), [28](./alias#L229))
 - [https://github.com/3-shake/awscli-aliases/blob/master/alias](https://github.com/3-shake/awscli-aliases/blob/master/alias) ([29](./alias#L234))

@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 [toplevel]
 
+# AWS CLI v2 Return Codes
+# https://awscli.amazonaws.com/v2/documentation/api/latest/topic/return-codes.html
 ###############
 ### GENERAL ###
 ###############
@@ -18,7 +20,7 @@ sg = security-group
 
 tostring =
   !f() {
-    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed."  1>&2 ; return 1 ; }
     cat "${1}" | jq 'tostring'
   }; f
 
@@ -27,35 +29,39 @@ tostring =
 # Usage: aws region [region]
 region =
   !f() {
-    [ $# -eq 1 ] && aws configure set region "$1" || aws configure get region;
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path."  1>&2 ; return 1 ; }
+    [ $# -eq 1 ] && aws configure set region "$1" || ${AWS_CLI} configure get region;
   }; f
 
 # List or set your region
 # Usage: aws profiles
 profiles =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path."  1>&2 ; return 1 ; }
     echo "export AWS_DEFAULT_PROFILE= to set a default profile."
     echo "Currently: AWS_DEFAULT_PROFILE=$AWS_DEFAULT_PROFILE"
-    aws configure list-profiles
+    ${AWS_CLI} configure list-profiles
+    return 0
   }; f
 
 # Upgrade to the latest version of the AWS CLI v2
 # Usage: aws upgrade
 upgrade =
   !f() {
-    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
-    UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed." ; return 1 ; }
-    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
-    SUDO_CLI=$(which sudo) || { echo "ERROR: sudo not installed." ; return 1 ; }
-    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path."  1>&2 ; return 1 ; }
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed."  1>&2 ; return 1 ; }
+    UNZIP_CLI=$(which unzip) || { echo "ERROR: unzip not installed."  1>&2 ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed."  1>&2 ; return 1 ; }
+    SUDO_CLI=$(which sudo) || { echo "ERROR: sudo not installed."  1>&2 ; return 1 ; }
+    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed."  1>&2 ; return 1 ; }
 
     [ $($UNAME_CLI) = "Darwin" ] &&  {
 	    echo "OS: OSX / Darwin"
-	    echo "Current version: $(aws --version | $CUT_CLI -d' ' -f 1)"
+	    echo "Current version: $(${AWS_CLI} --version | $CUT_CLI -d' ' -f 1)"
 	    echo "Downloading AWS CLI v2..."
       $CURL_CLI --fail -sS https://awscli.amazonaws.com/AWSCLIV2.pkg -o /tmp/AWSCLIV2.pkg
       if [ ! -f  "/tmp/AWSCLIV2.pkg" ]; then
-        echo "ERROR: Unable to download: https://awscli.amazonaws.com/AWSCLIV2.pkg"
+        echo "ERROR: Unable to download: https://awscli.amazonaws.com/AWSCLIV2.pkg"  1>&2
         return 1
       fi
       $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
@@ -69,11 +75,11 @@ upgrade =
 	    echo "Downloading AWS CLI v2..."
 	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
       if [ ! -f  "/tmp/awscliv2.zip" ]; then
-        echo "ERROR: Unable to download: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"
+        echo "ERROR: Unable to download: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"  1>&2
         return 1
       fi
 	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
-	    CURRENT_VER=$(aws --version | $CUT_CLI -d' ' -f 1)
+	    CURRENT_VER=$(${AWS_CLI} --version | $CUT_CLI -d' ' -f 1)
 	    NEW_VER=$(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)
 	    echo "Current version: $CURRENT_VER"
 	    echo "    New version: $NEW_VER"
@@ -92,11 +98,11 @@ upgrade =
 
 
 # Update to the latest aliases file
-# Usage: update-aliases
+# Usage: aws update-aliases
 update-aliases =
     !f() {
-      CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
-      CMP_CLI=$(which cmp) || { echo "ERROR: CMP not installed." ; return 1 ; }
+      CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." 1>&2 ; return 1 ; }
+      CMP_CLI=$(which cmp) || { echo "ERROR: CMP not installed." 1>&2 ; return 1 ; }
 
       # Update to the latest version of the aliases
       $CURL_CLI --fail -sS https://raw.githubusercontent.com/msaum/aws-alias/master/alias -o ${HOME}/.aws/cli/alias.$$
@@ -115,40 +121,41 @@ update-aliases =
     }; f
 
 # Install and check all prerequisites
-# https://github.com/rhyeal/aws-rotate-iam-keys
 install =
   !f() {
     UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
 
 	  [ $($UNAME_CLI) = "Darwin" ] &&  {
       echo "OS: OSX / Darwin"
-      BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" ; return 1 ; }
-      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, please install with \"brew install jq\"." ;  }
-      JP_CLI=$(which jp) || { echo "ERROR: jp not installed, please install with \"brew install jp\"" ;  }
+      BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" 1>&2 ; return 1 ; }
+      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, please install with \"brew install jq\"." 1>&2 ;  }
+      JP_CLI=$(which jp) || { echo "ERROR: jp not installed, please install with \"brew install jp\"" 1>&2 ;  }
     }
     [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
-      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, installing" ; sudo apt update ; sudo apt install -y jq ; }
-      JP_CLI=$(which jp) || { echo "ERROR: jp not installed, installing" ; sudo apt update ; sudo apt install -y jp ; }
+      JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, installing" 1>&2 ; sudo apt update ; sudo apt install -y jq ; }
+      JP_CLI=$(which jp) || { echo "ERROR: jp not installed, installing" 1>&2 ; sudo apt update ; sudo apt install -y jp ; }
 		}
 
-    CHMOD_CLI=$(which chmod) || { echo "ERROR: chmod not found in path." ; return 1 ; }
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-    FIND_CLI=$(which find) || { echo "ERROR: find not installed.  Please install find and re-run \"aws install\"." ; return 1 ; }
-    SORT_CLI=$(which sort) || { echo "ERROR: sort not installed.  Please install sort and re-run \"aws install\"." ; return 1 ; }
-    HEAD_CLI=$(which head) || { echo "ERROR: head not installed.  Please install head and re-run \"aws install\"." ; return 1 ; }
-    SED_CLI=$(which sed) || { echo "ERROR: sed not installed.  Please install sed and re-run \"aws install\"." ; return 1 ; }
-    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed.  Please install grep and re-run \"aws install\"." ; return 1 ; }
-    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed.  Please install cut and re-run \"aws install\"." ; return 1 ; }
-    DATE_CLI=$(which date) || { echo "ERROR: date not installed.  Please install date and re-run \"aws install\"." ; return 1 ; }
-    REV_CLI=$(which rev) || { echo "ERROR: rev not installed.  Please install rev and re-run \"aws install\"." ; return 1 ; }
-    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed.  Please install curl and re-run \"aws install\"." ; return 1 ; }
-    PIP3_CLI=$(which pip3) || { echo "ERROR: pip3 not installed.  Please install pip3 and re-run \"aws install\"." ; return 1 ; }
-    CMP_CLI=$(which cmp) || { echo "ERROR: CMP not installed." ; return 1 ; }
+    CHMOD_CLI=$(which chmod) || { echo "ERROR: chmod not found in path." 1>&2 ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    FIND_CLI=$(which find) || { echo "ERROR: find not installed.  Please install find and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    SORT_CLI=$(which sort) || { echo "ERROR: sort not installed.  Please install sort and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    HEAD_CLI=$(which head) || { echo "ERROR: head not installed.  Please install head and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed.  Please install sed and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed.  Please install grep and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed.  Please install cut and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    DATE_CLI=$(which date) || { echo "ERROR: date not installed.  Please install date and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    REV_CLI=$(which rev) || { echo "ERROR: rev not installed.  Please install rev and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed.  Please install curl and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    PIP3_CLI=$(which pip3) || { echo "ERROR: pip3 not installed.  Please install pip3 and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    CMP_CLI=$(which cmp) || { echo "ERROR: cmp not installed. Please install cmp and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    TPUT_CLI=$(which tput) || { echo "ERROR: tput not installed. Please install tput and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    DOCKER_CLI=$(which docker) || { echo "ERROR: docker not installed. Please install docker and re-run \"aws install\"." 1>&2 ; return 1 ; }
     GETOPT_CLI=$(which getopt) ||
     {
-        echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."
-        echo "If you are on Mac OSX, use brew to install \"gn--getopt\". https://formulae.brew.sh/formula/gnu-getopt"
+        echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."  1>&2
+        echo "If you are on Mac OSX, use brew to install \"gn--getopt\". https://formulae.brew.sh/formula/gnu-getopt"  1>&2
         return 1
     }
 
@@ -159,7 +166,7 @@ install =
     if [ -f  "${HOME}/.aws/cli/aws-rotate-iam-keys" ]; then
       echo "Downloaded https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys"
     else
-      echo "Unable to download https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys"
+      echo "ERROR: Unable to download https://raw.githubusercontent.com/rhyeal/aws-rotate-iam-keys/master/src/bin/aws-rotate-iam-keys"  1>&2
       return 1
     fi
     $CHMOD_CLI a+x ${HOME}/.aws/cli/aws-rotate-iam-keys 2> /dev/null
@@ -186,7 +193,7 @@ install =
         echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
       }
       [ -x $AWS_MFA_CLI ] || {
-        echo "ERROR: aws-mfa not found."
+        echo "ERROR: aws-mfa not found."  1>&2
         return 1
       }
     }
@@ -206,7 +213,6 @@ rotate-iam-keys =
         echo "Usage: aws rotate-iam-keys <profile-long-term>"
         return 1 ;
     else
-        echo ${HOME}/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
         ${HOME}/.aws/cli/aws-rotate-iam-keys --profile "$PROFILE"
     fi
     }; f
@@ -225,17 +231,25 @@ iam-keys-days-remaining =
         echo "Usage: aws iam-keys-days-remaining"
         return 1
       }
-    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." ; return 1 ; }
-    SED_CLI=$(which sed) || { echo "ERROR: sed not installed." ; return 1 ; }
-    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed." ; return 1 ; }
-    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed." ; return 1 ; }
-    DATE_CLI=$(which date) || { echo "ERROR: date not installed." ; return 1 ; }
-    REV_CLI=$(which rev) || { echo "ERROR: rev not installed." ; return 1 ; }
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed."  1>&2 ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed."  1>&2 ; return 1 ; }
+    GREP_CLI=$(which grep) || { echo "ERROR: grep not installed."  1>&2 ; return 1 ; }
+    CUT_CLI=$(which cut) || { echo "ERROR: cut not installed."  1>&2 ; return 1 ; }
+    DATE_CLI=$(which date) || { echo "ERROR: date not installed."  1>&2 ; return 1 ; }
+    REV_CLI=$(which rev) || { echo "ERROR: rev not installed."  1>&2 ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path."  1>&2 ; return 1 ; }
+    UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed."  1>&2 ; return 1 ; }
 
     # Set your aws username
-    USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g')
+    if  USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g') 2> /dev/null; then
+      echo "ERROR: Unable to locate credentials."  1>&2
+      return 1
+    fi
+
+    if [ "${USERNAME}" = "" ]; then
+      echo "ERROR: Unable to determine a user name"  1>&2
+      return 1
+    fi
 
     # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
     CDATE=$($AWS_CLI iam list-access-keys --output json --user-name ${USERNAME} | $GREP_CLI CreateDate | $CUT_CLI -c 28- | $REV_CLI | $CUT_CLI -c 8- | $REV_CLI |  $SED_CLI -E s/T/\ /g)
@@ -277,9 +291,9 @@ iam-keys-days-remaining =
 # Usage: aws mfa [profile]
 mfa =
   !f() {
-    SORT_CLI=$(which sort) || { echo "ERROR: sort not installed." ; return 1 ; }
-    HEAD_CLI=$(which head) || { echo "ERROR: head not installed." ; return 1 ; }
-    FIND_CLI=$(which find) || { echo "ERROR: find not installed." ; return 1 ; }
+    SORT_CLI=$(which sort) || { echo "ERROR: sort not installed." 1>&2  ; return 1 ; }
+    HEAD_CLI=$(which head) || { echo "ERROR: head not installed."  1>&2 ; return 1 ; }
+    FIND_CLI=$(which find) || { echo "ERROR: find not installed."  1>&2 ; return 1 ; }
 
     [ "$AWS_DEFAULT_PROFILE" ]  && PROFILE=$AWS_DEFAULT_PROFILE
     [ "$AWS_PROFILE" ]          && PROFILE=$AWS_PROFILE
@@ -297,7 +311,7 @@ mfa =
         echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
       }
       [ -x $AWS_MFA_CLI ] || {
-        echo "ERROR: aws-mfa not found."
+        echo "ERROR: aws-mfa not found."  1>&2
         return 1
       }
     }
@@ -319,12 +333,31 @@ mfa =
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws whoami
-whoami = sts get-caller-identity
+whoami =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI sts get-caller-identity 2> /dev/null
+    [ $? -eq 0 ] || {
+      echo "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration."  1>&2
+      return 1
+    }
+  }; f
 
+# IAM entity to create a specific service role
+# https://docs.aws.amazon.com/IAM/latest/UserGuide/id_roles_create_for-service.html
+# The ARN for a service-linked role includes a service principal, which is indicated in the policies below as
+# SERVICE-NAME.amazonaws.com. Do not try to guess the service principal, because it is case sensitive and the
+# format can vary across AWS services. To view the service principal for a service, see its service-linked role
+# documentation.
+# Usage: aws create-assume-role <rolename> <service>
 create-assume-role =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] || [ -z "${2}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws create-assume-role <rolename> <service>" 1>&2; return 1;  }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} iam create-role --role-name "${1}" \
       --assume-role-policy-document \
         "{\"Statement\":[{\
@@ -338,12 +371,16 @@ create-assume-role =
   }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
-# Usage: aws find-access-key <access key>
 # Note: If there are a lot of IAM users, this may take some time to run
+# Usage: aws find-access-key <access key>
 find-access-key =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-    clear_to_eol=$(tput el)
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    TPUT_CLI=$(which tput) || { echo "ERROR: tput not installed." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+
+    clear_to_eol=$(${TPUT_CLI} el)
     for i in $($AWS_CLI iam list-users --query "Users[].UserName" --output text); do
       printf "\r%sSearching...$i" "${clear_to_eol}"
       result=$($AWS_CLI iam list-access-keys --output text --user-name "${i}" --query "AccessKeyMetadata[?AccessKeyId=='${1}'].UserName";)
@@ -359,13 +396,21 @@ find-access-key =
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws list-iam-users
-list-iam-users = iam list-users --query "Users[].UserName" --output table
+list-iam-users =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    $AWS_CLI iam list-users --query "Users[].UserName" --output table
+  }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws list-user-keys <username>
 list-user-keys =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     $AWS_CLI iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId";
   }; f
 
@@ -373,7 +418,9 @@ list-user-keys =
 # Usage: aws list-virtual-mfa [username]
 list-virtual-mfa =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     [ "${1}" ]    && $AWS_CLI iam list-mfa-devices --user-name ${1} | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
     [ -z "${1}" ] && $AWS_CLI iam list-mfa-devices | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
   }; f
@@ -384,7 +431,15 @@ list-virtual-mfa =
 # Usage: aws delete-virtual-mfa <username>
 delete-virtual-mfa =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+
+    if [ "${1}" = "" ]; then
+        echo "ERROR: Missing an argument"
+        echo "Usage: aws delete-virtual-mfa <username>"
+        return 1
+    fi
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     account_id=$($AWS_CLI sts get-caller-identity --output json | jq -r '.Account')
     $AWS_CLI iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
   }; f
@@ -395,8 +450,10 @@ delete-virtual-mfa =
 # Usage: aws find-users-without-mfa
 find-users-without-mfa =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-    echo "Users withouth MFA enabled:"
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    echo "Users without MFA enabled:"
     for i in $($AWS_CLI iam list-users --query "Users[?PasswordLastUsed].UserName" --output text); do
       result=$($AWS_CLI iam list-virtual-mfa-devices --query "length(VirtualMFADevices[?User.UserName=='${i}'])")
       if [ "${result}" -eq "0" ]; then
@@ -407,21 +464,27 @@ find-users-without-mfa =
 
 generate-sts-token =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
-    user_arn=$($AWS_CLI whoami | jq -r .Arn)
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    user_arn=$($AWS_CLI whoami --output json 2> /dev/null | ${JQ_CLI}  -r .Arn)
     duration=${1:-129600}
-    session_data=$(aws sts get-session-token --duration-seconds $duration)
-    echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | jq -r .Credentials.Expiration))"
+    session_data=$(${AWS_CLI} sts get-session-token --duration-seconds $duration)
+    echo "# temporary credentials on user ${user_arn} for $duration seconds (expires on $(echo $session_data | ${JQ_CLI} -r .Credentials.Expiration))"
     echo "export AWS_DEFAULT_REGION=$($AWS_CLI configure get region)"
-    echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | jq -r .Credentials.AccessKeyId)"
-    echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | jq -r .Credentials.SecretAccessKey)"
-    echo "export AWS_SESSION_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
-    echo "export AWS_SECURITY_TOKEN=$(echo $session_data | jq -r .Credentials.SessionToken)"
+    echo "export AWS_ACCESS_KEY_ID=$(echo $session_data | ${JQ_CLI} -r .Credentials.AccessKeyId)"
+    echo "export AWS_SECRET_ACCESS_KEY=$(echo $session_data | ${JQ_CLI} -r .Credentials.SecretAccessKey)"
+    echo "export AWS_SESSION_TOKEN=$(echo $session_data | ${JQ_CLI} -r .Credentials.SessionToken)"
+    echo "export AWS_SECURITY_TOKEN=$(echo $session_data | ${JQ_CLI} -r .Credentials.SessionToken)"
   }; f
 
+# Usage: aws assume <role-arn>
 assume =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ "${1}" ] || { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws assume <role-arn>"1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+
     res=$($AWS_CLI sts assume-role --role-arn ${1} --role-session-name session)
     if echo $res | grep -q AccessKeyId; then
         echo $res \
@@ -443,20 +506,34 @@ assume =
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws running-instances
-running-instances = ec2 describe-instances \
+running-instances =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    $AWS_CLI ec2 describe-instances \
     --filter Name=instance-state-name,Values=running \
     --output table \
     --query 'Reservations[].Instances[].{ID: InstanceId,Hostname: PublicDnsName,Name: Tags[?Key==`Name`].Value | [0],Type: InstanceType, Platform: Platform || `Linux`}'
+  }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws ebs-volumes
-ebs-volumes= ec2 describe-volumes \
+ebs-volumes=
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    $AWS_CLI describe-volumes \
     --query 'Volumes[].{VolumeId: VolumeId,State: State,Size: Size,Name: Tags[0].Value,AZ: AvailabilityZone}' \
     --output table
+  }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws amazon-linux-amis
-amazon-linux-amis = ec2 describe-images \
+amazon-linux-amis =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    $AWS_CLI ec2 describe-images \
     --filter \
       Name=owner-alias,Values=amazon \
       Name=name,Values="amzn-ami-hvm-*" \
@@ -466,22 +543,25 @@ amazon-linux-amis = ec2 describe-images \
       Name=block-device-mapping.volume-type,Values=gp2 \
     --query "reverse(sort_by(Images, &CreationDate))[*].[ImageId,Name,Description]" \
     --output text
+  }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws list-sgs
-list-sgs = ec2 describe-security-groups --query "SecurityGroups[].[GroupId, GroupName]" --output text
+list-sgs =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    $AWS_CLI ec2 describe-security-groups --query "SecurityGroups[].[GroupId, GroupName]" --output text
+  }; f
 
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws sg-rules <security group id>
 sg-rules =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
-    {
-      echo "Security group id not given"
-      echo "Usage: aws sg-rules <security group id>"
-      return 1
-    }
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws sg-rules <security group id>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     $AWS_CLI ec2 describe-security-groups \
     --query "SecurityGroups[].IpPermissions[].[FromPort,ToPort,IpProtocol,join(',',IpRanges[].CidrIp)]" \
     --group-id "$1" --output text;
@@ -489,22 +569,25 @@ sg-rules =
 
 # Translates a security group name into a security group id
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
-# Usage: Usage: aws get-group-id <security group name>
+# Usage: aws get-group-id <security group name>
 get-group-id =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
-          {
-            echo "Security group name not given"
-            echo "Usage: aws get-group-id <security group name>"
-            return 1
-          }
-    $AWS_CLI ec2 describe-security-groups --filters Name=group-name,Values=${1} --query SecurityGroups[0].GroupId --output text
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-group-id <security group name>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    $AWS_CLI ec2 describe-security-groups --filters Name=group-name,Values=$
+    }{1} --query SecurityGroups[0].GroupId --output text
   }; f
 
+
+# Usage: aws authorize-my-ip-by-name <security group name>
 authorize-my-ip-by-name =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws authorize-my-ip-by-name <security group name>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     group_id=$($AWS_CLI get-group-id "${1}")
     $AWS_CLI authorize-my-ip "$group_id"
   }; f
@@ -512,49 +595,74 @@ authorize-my-ip-by-name =
 # list all security group port ranges open to 0.0.0.0/0
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws public-ports
-public-ports = ec2 describe-security-groups \
-  --filters Name=ip-permission.cidr,Values=0.0.0.0/0 \
-  --query 'SecurityGroups[].{
-    GroupName:GroupName,
-    GroupId:GroupId,
-    PortRanges:
-      IpPermissions[?contains(IpRanges[].CidrIp, `0.0.0.0/0`)].[
-        join(`:`, [IpProtocol, join(`-`, [to_string(FromPort), to_string(ToPort)])])
-      ][]
-  }'
+public-ports =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2  return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ec2 describe-security-groups \
+      --filters Name=ip-permission.cidr,Values=0.0.0.0/0 \
+      --query 'SecurityGroups[].{
+        GroupName:GroupName,
+        GroupId:GroupId,
+        PortRanges:
+          IpPermissions[?contains(IpRanges[].CidrIp, `0.0.0.0/0`)].[
+            join(`:`, [IpProtocol, join(`-`, [to_string(FromPort), to_string(ToPort)])])
+          ][]
+      }'
+  }; f
 
 # Show my current external ip address
 # Prerequisites: Set a profile to use with either AWS_DEFAULT_PROFILE or AWS_PROFILE to send the profile name as an argument
 # Usage: aws myip
-myip =
+my-ip =
   !f() {
-    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." ; return 1 ; }
+    CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." 1>&2 ; return 1 ; }
     $CURL_CLI https://checkip.amazonaws.com
   }; f
 
-#allow-my-ip =
+# allow-my-ip
+# Usage: aws allow-my-ip <security group name>
+allow-my-ip =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws allow-my-ip <security group name>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     my_ip=$($AWS_CLI myip)
     $AWS_CLI ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
   }; f
 
-#revoke-my-ip =
+# revoke-my-ip
+# Usage: revoke-my-ip <security group name> <protocol> <port>
+revoke-my-ip =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] || [ -z "${2}" ] || [ -z "${3}" ]&&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: revoke-my-ip <security group name> <protocol> <port>" 1>&2; return 1;  }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     my_ip=$($AWS_CLI myip)
     $AWS_CLI ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
   }; f
 
-#allow-my-ip-all =
+# allow-my-ip-all
+# Usage: aws authorize-my-ip-by-name <security group name>
+allow-my-ip-all =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws allow-my-ip-all <security group name>" 1>&2; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     $AWS_CLI allow-my-ip ${1} all all
   }; f
 
-#revoke-my-ip-all =
+# revoke-my-ip-all
+# Usage: aws revoke-my-ip-all <security group name>
+revoke-my-ip-all =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws revoke-my-ip-all <security group name>" 1>&2; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     $AWS_CLI revoke-my-ip ${1} all all
   }; f
 
@@ -563,30 +671,28 @@ myip =
 # Usage: aws delete-ami <AMI ID>
 delete-ami =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
-          {
-            echo "AMI ID not given"
-            echo "Usage: aws delete-ami <AMI ID>"
-            return 1
-          }
-    snapshots=($($AWS_CLI ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text))
-    $AWS_CLI ec2 deregister-image --image-id $1
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws delete-ami <AMI ID>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+
+    snapshots=$(${AWS_CLI} ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text)
+    #$AWS_CLI ec2 deregister-image --image-id $1
     for id in $snapshots
     do
-      $AWS_CLI ec2 delete-snapshot --snapshot-id ${id}
+      #$AWS_CLI ec2 delete-snapshot --snapshot-id ${id}
+      echo $id
     done
   }; f
 
+# list-instances
+# Usage: aws list-instances <region>
 list-instances =
   !f() {
-    AWS_CLI=$(which aws) || { echo "ERROR: aws not installed." ; return 1 ; }
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
-          {
-            echo "Region not given"
-            echo "Usage: aws list-instances region"
-            return 1
-          }
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws list-instances <region>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
     echo "Filtering by \`$1\`"
     for region in $($AWS_CLI ec2 describe-regions --query "Regions[*].RegionName" --output text | tr "\t" "\n" | grep "$1")
       do
@@ -608,31 +714,46 @@ list-instances =
       done
   }; f
 
-connect-ssh =
-  !f() {
-    instance_output=$(aws ec2 describe-instances \
-                        --instance-ids "${1}" \
-                        --query Reservations[0].Instances[0])
-    ssh_key_file=$(jp -u KeyName <<< "$instance_output")".pem"
-    public_ip=$(jp -u PublicIpAddress <<< "$instance_output")
-    if ! [ -f "$ssh_key_file" ];
-    then
-      echo "Error: Could not locate SSH key: "$ssh_key_file" in current" \
-           "working direcory"
-      exit 1
-    fi
-    if [ "$public_ip" == "null" ];
-    then
-      echo "EC2 Instance: "${1}" does not have a public IP address." \
-           "Unable to connect with SSH."
-      exit 1
-    fi
-    ssh -i "$ssh_key_file" ec2-user@"$public_ip"
-  }; f
+## connect-ssh
+## Usage: aws connect-ssh <instance-id>
+#connect-ssh =
+#  !f() {
+#    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+#    JP_CLI=$(which curl) || { echo "ERROR: jp not installed." 1>&2 ; return 1 ; }
+#    [ -z "${1}" ] &&
+#      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws list-instances <region>" 1>&2 ; return 1; }
+#    $AWS_CLI whoami > /dev/null || { return 1 ; }
+#
+#    instance_output=$(${AWS_CLI} ec2 describe-instances \
+#                        --instance-ids "${1}" \
+#                        --query Reservations[0].Instances[0])
+#
+#    ssh_key_file=$(${JP_CLI} -u KeyName << "$instance_output")".pem"
+#    public_ip=$(${JP_CLI} -u PublicIpAddress <<< "$instance_output")
+#    if ! [ -f "$ssh_key_file" ];
+#    then
+#      echo "Error: Could not locate SSH key: "$ssh_key_file" in current working directory" 1>&2
+#      exit 1
+#    fi
+#    if [ "$public_ip" == "null" ];
+#    then
+#      echo "EC2 Instance: "${1}" does not have a public IP address. Unable to connect with SSH."
+#      exit 1
+#    fi
+#    ssh -i "$ssh_key_file" ec2-user@"$public_ip"
+#
+#  }; f
 
+# search-instances
+# Usage: aws search-instances <name>
 search-instances =
   !f() {
-    aws ec2 describe-instances \
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2; echo "Usage: aws search-instances <name>" 1>&2 ; return 1; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+
+    ${AWS_CLI} ec2 describe-instances \
     --filters Name=instance-state-name,Values=running,stopped \
     --query "Reservations[].Instances[].{Name: (Tags[?Key==\`Name\`].Value)[0],
                                         Id: InstanceId,
@@ -641,26 +762,36 @@ search-instances =
     --out table
   }; f
 
+# list-all-regions
+# Usage: aws list-all-regions
 list-all-regions =
   !f() {
-    aws ec2 describe-regions --query "Regions[].RegionName" --output text
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ec2 describe-regions --query "Regions[].RegionName" --output text
   }; f
 
+# list-azs
+# Usage: aws list-azs
 list-azs =
   !f() {
-    aws ec2 describe-availability-zones --region $1 --query AvailabilityZones[].ZoneName --output text;
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ec2 describe-availability-zones --region $1 --query AvailabilityZones[].ZoneName --output text;
   }; f
 
 vpc-peers =
   !f() {
-    aws ec2 describe-vpc-peering-connections \
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    ${AWS_CLI} ec2 describe-vpc-peering-connections \
     --query 'VpcPeeringConnections[].Tags[?Key==`Name`].Value' --output text | xargs -n1 | sort -d
   }; f
 
 find-instances-in-sg =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     filter=${2:-Name}
-    for i in $(aws ec2 describe-instances --filters "Name=network-interface.group-id,Values=['${1}']" --query "Reservations[].Instances[].Tags[?Key == '${filter}'].Value[]" --output text)
+    for i in $(${AWS_CLI} ec2 describe-instances --filters "Name=network-interface.group-id,Values=['${1}']" --query "Reservations[].Instances[].Tags[?Key == '${filter}'].Value[]" --output text)
     do
       echo ${i}
     done
@@ -676,24 +807,28 @@ find-ssh-open = ec2 describe-security-groups \
 
 get-asg-instance-ips =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     asg_name=${1}
-    aws ec2 describe-instances --filters "Name=tag:aws:autoscaling:groupName,Values=${asg_name}" | jq -r '.Reservations[].Instances[].PrivateIpAddress'
+    ${AWS_CLI} ec2 describe-instances --filters "Name=tag:aws:autoscaling:groupName,Values=${asg_name}" | jq -r '.Reservations[].Instances[].PrivateIpAddress'
   }; f
 
 find-host-by-instance-id =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     instance_id=${1}
-    aws ec2 describe-instances --filters "Name=instance-id,Values=${instance_id}" | jq -r '.Reservations[].Instances[].PrivateIpAddress' | sed -E 's/\./-/g; s/^/ip-/'
+    ${AWS_CLI} ec2 describe-instances --filters "Name=instance-id,Values=${instance_id}" | jq -r '.Reservations[].Instances[].PrivateIpAddress' | sed -E 's/\./-/g; s/^/ip-/'
   }; f
 
 find-instance-by-public-ip =
   !f() {
-    aws ec2 describe-instances --filters "Name=ip-address,Values=$1" | jq -r '.Reservations[].Instances[].Tags[] | select(.Key == "Name").Value'
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    ${AWS_CLI} ec2 describe-instances --filters "Name=ip-address,Values=$1" | jq -r '.Reservations[].Instances[].Tags[] | select(.Key == "Name").Value'
   }; f
 
 find-nat-gateway-by-public-ip =
   !f() {
-    aws ec2 describe-nat-gateways | jq -r '.NatGateways[] | select(.NatGatewayAddresses[].PublicIp == "'$1'") | .Tags[] | select(.Key == "Name").Value'
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    ${AWS_CLI} ec2 describe-nat-gateways | jq -r '.NatGateways[] | select(.NatGatewayAddresses[].PublicIp == "'$1'") | .Tags[] | select(.Key == "Name").Value'
   }; f
 
 list-igw = ec2 describe-internet-gateways \
@@ -731,14 +866,16 @@ list-routes = ec2 describe-route-tables \
 
 get-dns-from-instance-id =
   !f() {
-    aws ec2 describe-instances \
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    ${AWS_CLI} ec2 describe-instances \
     --instance-ids "${1}" \
     --query 'Reservations[*].Instances[*][PublicDnsName,InstanceId]' --output text | cut -f1
   }; f
 
 get-instance-id-from-dns =
   !f() {
-    aws ec2 describe-instances \
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    ${AWS_CLI} ec2 describe-instances \
     --filters "Name=dns-name,Values=${1}" \
     --query 'Reservations[*].Instances[*][InstanceId,PublicDnsName]' --output text | cut -f1
   }; f
@@ -749,11 +886,13 @@ get-instance-id-from-dns =
 
 log-groups =
   !f() {
-      aws logs describe-log-groups | jq '.logGroups[].logGroupName'  | sed 's/\"//g'
+      AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+      ${AWS_CLI} logs describe-log-groups | jq '.logGroups[].logGroupName'  | sed 's/\"//g'
   }; f
 
 last-log =
   !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     group="$1"
 
     if ! stream="$(aws logs describe-log-streams --log-group-name "$group" \
@@ -764,9 +903,9 @@ last-log =
 
     stream="${stream%[[:space:]]None}"
 
-    aws logs get-log-events --log-group-name "$group" --log-stream-name "$stream" \
+    ${AWS_CLI} logs get-log-events --log-group-name "$group" --log-stream-name "$stream" \
     --query "events[].message" --output "text"
-  }; f
+  }; fkkkZZ
 
 ##########
 ## ECR ###
@@ -774,10 +913,12 @@ last-log =
 
 docker-ecr-login =
   !f() {
-    region=$(aws configure get region)
-    endpoint=$(aws ecr get-authorization-token --region $region --output text --query authorizationData[].proxyEndpoint)
-    passwd=$(aws ecr get-authorization-token --region $region --output text --query authorizationData[].authorizationToken | base64 --decode | cut -d: -f2)
-    docker login -u AWS -p $passwd $endpoint
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    DOCKER_CLI=$(which docker) || { echo "ERROR: docker not installed." 1>&2 ; return 1 ; }
+    region=$(${AWS_CLI} configure get region)
+    endpoint=$(${AWS_CLI} ecr get-authorization-token --region $region --output text --query authorizationData[].proxyEndpoint)
+    passwd=$(${AWS_CLI} ecr get-authorization-token --region $region --output text --query authorizationData[].authorizationToken | base64 --decode | cut -d: -f2)
+    ${DOCKER_CLI} login -u AWS -p $passwd $endpoint
   }; f
 
 
