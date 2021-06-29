@@ -1,7 +1,8 @@
-#!libs/bats/bin/bats
+#!/usr/bin/env bats
 
-#load libs/bats-assert/load
-#load libs/bats-support/load
+
+#load bats-assert/load
+#load bats-support/load
 
 # Copy the aliases file to the local ~/.aws/cli directory so it becomes operative
 cp ../alias ~/.aws/cli/alias
@@ -438,7 +439,15 @@ unset   AWS_PROFILE
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
 }
 
-#vpc-peers
+# vpc-peers
+# Usage: aws vpc-peers
+@test "Checking vpc-peers" {
+  run aws vpc-peers
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
+
 
 #find-instances-in-sg
 
