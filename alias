@@ -30,7 +30,7 @@ tostring =
 region =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path."  1>&2 ; return 1 ; }
-    [ $# -eq 1 ] && aws configure set region "$1" || ${AWS_CLI} configure get region;
+    [ $# -eq 1 ] && ${AWS_CLI} configure set region "$1" || ${AWS_CLI} configure get region;
   }; f
 
 # List or set your region
@@ -178,7 +178,8 @@ install =
     fi
 
     # Install aws-mfa Python script using pip3
-    $PIP3_CLI install --user --upgrade aws-mfa > /dev/null 2>&1
+    echo "Installing aws-mfa Python script using pip3.  Please wait, this may take a long time..."
+    $PIP3_CLI install --user --upgrade aws-mfa
 
     AWS_MFA_CLI=$(which aws-mfa) ||
     {
@@ -357,7 +358,7 @@ create-assume-role =
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ -z "${1}" ] || [ -z "${2}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws create-assume-role <rolename> <service>" 1>&2; return 1;  }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} iam create-role --role-name "${1}" \
       --assume-role-policy-document \
         "{\"Statement\":[{\
@@ -378,7 +379,7 @@ find-access-key =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     TPUT_CLI=$(which tput) || { echo "ERROR: tput not installed." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
 
     clear_to_eol=$(${TPUT_CLI} el)
     for i in $($AWS_CLI iam list-users --query "Users[].UserName" --output text); do
@@ -400,7 +401,7 @@ list-iam-users =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI iam list-users --query "Users[].UserName" --output table
   }; f
 
@@ -410,7 +411,7 @@ list-user-keys =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI iam list-access-keys --output text --user-name "$1" --query "AccessKeyMetadata[].AccessKeyId";
   }; f
 
@@ -420,7 +421,7 @@ list-virtual-mfa =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     [ "${1}" ]    && $AWS_CLI iam list-mfa-devices --user-name ${1} | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
     [ -z "${1}" ] && $AWS_CLI iam list-mfa-devices | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
   }; f
@@ -439,7 +440,7 @@ delete-virtual-mfa =
         echo "Usage: aws delete-virtual-mfa <username>"
         return 1
     fi
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     account_id=$($AWS_CLI sts get-caller-identity --output json | jq -r '.Account')
     $AWS_CLI iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
   }; f
@@ -452,7 +453,7 @@ find-users-without-mfa =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     echo "Users without MFA enabled:"
     for i in $($AWS_CLI iam list-users --query "Users[?PasswordLastUsed].UserName" --output text); do
       result=$($AWS_CLI iam list-virtual-mfa-devices --query "length(VirtualMFADevices[?User.UserName=='${i}'])")
@@ -466,7 +467,7 @@ generate-sts-token =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     user_arn=$($AWS_CLI whoami --output json 2> /dev/null | ${JQ_CLI}  -r .Arn)
     duration=${1:-129600}
     session_data=$(${AWS_CLI} sts get-session-token --duration-seconds $duration)
@@ -483,7 +484,7 @@ assume =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ "${1}" ] || { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws assume <role-arn>"1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
 
     res=$($AWS_CLI sts assume-role --role-arn ${1} --role-session-name session)
     if echo $res | grep -q AccessKeyId; then
@@ -509,7 +510,7 @@ assume =
 running-instances =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI ec2 describe-instances \
     --filter Name=instance-state-name,Values=running \
     --output table \
@@ -521,7 +522,7 @@ running-instances =
 ebs-volumes=
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI describe-volumes \
     --query 'Volumes[].{VolumeId: VolumeId,State: State,Size: Size,Name: Tags[0].Value,AZ: AvailabilityZone}' \
     --output table
@@ -532,7 +533,7 @@ ebs-volumes=
 amazon-linux-amis =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI ec2 describe-images \
     --filter \
       Name=owner-alias,Values=amazon \
@@ -550,7 +551,7 @@ amazon-linux-amis =
 list-sgs =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI ec2 describe-security-groups --query "SecurityGroups[].[GroupId, GroupName]" --output text
   }; f
 
@@ -561,7 +562,7 @@ sg-rules =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws sg-rules <security group id>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI ec2 describe-security-groups \
     --query "SecurityGroups[].IpPermissions[].[FromPort,ToPort,IpProtocol,join(',',IpRanges[].CidrIp)]" \
     --group-id "$1" --output text;
@@ -575,7 +576,7 @@ get-group-id =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-group-id <security group name>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI ec2 describe-security-groups --filters Name=group-name,Values=$
     }{1} --query SecurityGroups[0].GroupId --output text
   }; f
@@ -587,7 +588,7 @@ authorize-my-ip-by-name =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws authorize-my-ip-by-name <security group name>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     group_id=$($AWS_CLI get-group-id "${1}")
     $AWS_CLI authorize-my-ip "$group_id"
   }; f
@@ -598,7 +599,7 @@ authorize-my-ip-by-name =
 public-ports =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2  return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-security-groups \
       --filters Name=ip-permission.cidr,Values=0.0.0.0/0 \
       --query 'SecurityGroups[].{
@@ -627,7 +628,7 @@ allow-my-ip =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws allow-my-ip <security group name>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     my_ip=$($AWS_CLI myip)
     $AWS_CLI ec2 authorize-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
   }; f
@@ -639,7 +640,7 @@ revoke-my-ip =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] || [ -z "${2}" ] || [ -z "${3}" ]&&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws evoke-my-ip <security group name> <protocol> <port>" 1>&2; return 1;  }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     my_ip=$($AWS_CLI myip)
     $AWS_CLI ec2 revoke-security-group-ingress --group-name ${1} --protocol ${2} --port ${3} --cidr $my_ip/32
   }; f
@@ -651,7 +652,7 @@ allow-my-ip-all =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws allow-my-ip-all <security group name>" 1>&2; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI allow-my-ip ${1} all all
   }; f
 
@@ -662,7 +663,7 @@ revoke-my-ip-all =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws revoke-my-ip-all <security group name>" 1>&2; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     $AWS_CLI revoke-my-ip ${1} all all
   }; f
 
@@ -674,7 +675,7 @@ delete-ami =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws delete-ami <AMI ID>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
 
     snapshots=$(${AWS_CLI} ec2 describe-images --image-ids $1 --query "Images[].BlockDeviceMappings[].Ebs.SnapshotId" --output text)
     #$AWS_CLI ec2 deregister-image --image-id $1
@@ -692,7 +693,7 @@ list-instances =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws list-instances <region>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     echo "Filtering by \`$1\`"
     for region in $($AWS_CLI ec2 describe-regions --query "Regions[*].RegionName" --output text | tr "\t" "\n" | grep "$1")
       do
@@ -722,7 +723,7 @@ list-instances =
 #    JP_CLI=$(which curl) || { echo "ERROR: jp not installed." 1>&2 ; return 1 ; }
 #    [ -z "${1}" ] &&
 #      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws list-instances <region>" 1>&2 ; return 1; }
-#    $AWS_CLI whoami > /dev/null || { return 1 ; }
+#    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
 #
 #    instance_output=$(${AWS_CLI} ec2 describe-instances \
 #                        --instance-ids "${1}" \
@@ -751,7 +752,7 @@ search-instances =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2; echo "Usage: aws search-instances <name>" 1>&2 ; return 1; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
 
     ${AWS_CLI} ec2 describe-instances \
     --filters Name=instance-state-name,Values=running,stopped \
@@ -767,7 +768,7 @@ search-instances =
 list-all-regions =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-regions --query "Regions[].RegionName" --output text
   }; f
 
@@ -776,7 +777,7 @@ list-all-regions =
 list-azs =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-availability-zones --region $1 --query AvailabilityZones[].ZoneName --output text;
   }; f
 # vpc-peers
@@ -784,19 +785,19 @@ list-azs =
 vpc-peers =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-vpc-peering-connections \
     --query 'VpcPeeringConnections[].Tags[?Key==`Name`].Value' --output text | xargs -n1 | sort -d
   }; f
 
 # find-instances-in-sg
-# aws find-instances-in-sg <network interface group name> <security group id>
+# Usage: aws find-instances-in-sg <network interface group name> <security group id>
 find-instances-in-sg =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    [ -z "${1}" ] || [ -z "${2}" ] || [ -z "${3}" ]&&
+    [ -z "${1}" ] || [ -z "${2}" ]  &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-instances-in-sg <network interface group name> <security group id>" 1>&2; return 1;  }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     filter=${2:-Name}
     for i in $(${AWS_CLI} ec2 describe-instances --filters "Name=network-interface.group-id,Values=['${1}']" --query "Reservations[].Instances[].Tags[?Key == '${filter}'].Value[]" --output text)
     do
@@ -804,90 +805,136 @@ find-instances-in-sg =
     done
   }; f
 
-find-ssh-open = ec2 describe-security-groups \
-  --filters Name=ip-permission.from-port,Values=22 \
-  --query "SecurityGroups[].{
-    GroupName: GroupName,
-    GroupId: GroupId,
-    IPs: IpPermissions[?to_string(FromPort) == '22'][IpRanges[].CidrIp][][]
-  }"
+# find-ssh-open
+# Usage: aws find-ssh-open
+find-ssh-open =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ec2 describe-security-groups \
+      --filters Name=ip-permission.from-port,Values=22 \
+      --query "SecurityGroups[].{
+        GroupName: GroupName,
+        GroupId: GroupId,
+        IPs: IpPermissions[?to_string(FromPort) == '22'][IpRanges[].CidrIp][][]
+      }"
+  }; f
 
+# get-asg-instance-ips
+# Usage: aws get-asg-instance-ips <ASG Name>
 get-asg-instance-ips =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-asg-instance-ips <ASG Name>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     asg_name=${1}
     ${AWS_CLI} ec2 describe-instances --filters "Name=tag:aws:autoscaling:groupName,Values=${asg_name}" | jq -r '.Reservations[].Instances[].PrivateIpAddress'
   }; f
 
+# find-host-by-instance-id
+# Usage: aws find-host-by-instance-id <instance ID>
 find-host-by-instance-id =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-host-by-instance-id <instance ID>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     instance_id=${1}
     ${AWS_CLI} ec2 describe-instances --filters "Name=instance-id,Values=${instance_id}" | jq -r '.Reservations[].Instances[].PrivateIpAddress' | sed -E 's/\./-/g; s/^/ip-/'
   }; f
 
+#find-instance-by-public-ip
+# Usage: aws find-instance-by-public-ip <public ip>
 find-instance-by-public-ip =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-instance-by-public-ip <public ip>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-instances --filters "Name=ip-address,Values=$1" | jq -r '.Reservations[].Instances[].Tags[] | select(.Key == "Name").Value'
   }; f
 
+#find-nat-gateway-by-public-ip
+# Usage: aws find-nat-gateway-by-public-ip <public ip>
 find-nat-gateway-by-public-ip =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-nat-gateway-by-public-ip <public ip>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-nat-gateways | jq -r '.NatGateways[] | select(.NatGatewayAddresses[].PublicIp == "'$1'") | .Tags[] | select(.Key == "Name").Value'
   }; f
 
+#list-igw
+# Usage: list-igw <public ip>
 list-igw = ec2 describe-internet-gateways \
     --query "InternetGateways[].{IGW:InternetGatewayId,VpcId: Attachments[].VpcId|[0], Name: Tags[?Key=='Name'].Value |[0] }"  \
     --output table
 
+# list-ngw
+# Usage: aws list-ngw
 list-ngw = ec2 describe-nat-gateways \
     --query "NatGateways[].{VpcId:VpcId, NatGatewayId: NatGatewayId, SubnetId: SubnetId, PublicIp: NatGatewayAddresses[].PublicIp | [0], PrivateIp: NatGatewayAddresses[].PrivateIp | [0] }" \
     --output table
 
+#list-vgw
+# Usage: aws list-vgw
 list-vgw = ec2 describe-vpn-gateways \
     --query "VpnGateways[].{VpnGatewayId: VpnGatewayId, AmazonSideAsn: AmazonSideAsn, VpcId: VpcAttachments.VpcId,Name: Tags[?Key=='Name'].Value| [0] }" \
     --output table
-
+#list-vpn-connection
+# Usage: aws list-vpn-connection
 list-vpn-connection = ec2 describe-vpn-connections \
     --query "VpnConnections[].{ VpnConnectionId: VpnConnectionId, CustomerGatewayId:CustomerGatewayId,VpnGatewayId:VpnGatewayId, Name: Tags[?Key=='Name'].Value| [0] }" \
     --output table
 
+#list-instance-status
+# Usage: aws list-instance-status
 list-instance-status = ec2 describe-instance-status \
     --query "InstanceStatuses[].{InstanceId: InstanceId, State: InstanceState.Name, AZ: AvailabilityZone, SystemStatus: SystemStatus.Status, InstanceStatus: InstanceStatus.Status}" \
     --output table
 
+#list-vpcs
+# Usage: aws list-vpcs
 list-vpcs = ec2 describe-vpcs \
       --query \
         "Vpcs[].{VpcId: VpcId, CidrBlock: CidrBlock,  Name: Tags[?Key=='Name'].Value| [0], IsDefault: IsDefault}" \
       --output table
 
+#list-subnets
+# Usage: aws list-subnets
 list-subnets = ec2 describe-subnets \
     --query "Subnets[].{AZ:AvailabilityZone,VpcId:VpcId,SubnetId:SubnetId,CidrBlock:CidrBlock,    Name: Tags[?Key=='Name'].Value| [0]}" \
     --output table
 
+#list-routes
+# Usage: aws list-routes
 list-routes = ec2 describe-route-tables \
   --query "RouteTables[].{RouteTableId:RouteTableId, VpcId:VpcId, Name: Tags[?Key=='Name'].Value| [0], GatewayId: Routes[].{GatewayId:GatewayId,DestinationCidrBlock: DestinationCidrBlock} }  " \
   --output table
 
+#get-dns-from-instance-id
+# Usage: aws get-dns-from-instance-id <instance id>
 get-dns-from-instance-id =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-dns-from-instance-id <instance id>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-instances \
-    --instance-ids "${1}" \
-    --query 'Reservations[*].Instances[*][PublicDnsName,InstanceId]' --output text | cut -f1
+      --instance-ids "${1}" \
+      --query 'Reservations[*].Instances[*][PublicDnsName,InstanceId]' --output text | cut -f1
   }; f
 
+#get-instance-id-from-dns
+# Usage: aws get-instance-id-from-dns <dns name>
 get-instance-id-from-dns =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+      [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-dns-from-instance-id <instance id>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ec2 describe-instances \
     --filters "Name=dns-name,Values=${1}" \
     --query 'Reservations[*].Instances[*][InstanceId,PublicDnsName]' --output text | cut -f1
@@ -897,40 +944,44 @@ get-instance-id-from-dns =
 ## Cloudwatch ##
 ################
 
+# log-groups
+# Usage: aws log-groups
 log-groups =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} logs describe-log-groups | jq '.logGroups[].logGroupName'  | sed 's/\"//g'
   }; f
 
+#last-log
+# Usage: aws last-log <log group>
 last-log =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-dns-from-instance-id <instance id>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     group="$1"
-
-    if ! stream="$(aws logs describe-log-streams --log-group-name "$group" \
-    --max-items 1 --order-by LastEventTime --descending \
-    --query "logStreams[0].logStreamName" --output "text")"; then
-        return 1
+    if ! stream="$(${AWS_CLI} logs describe-log-streams --log-group-name "$group" \
+      --max-items 1 --order-by LastEventTime --descending \
+      --query "logStreams[0].logStreamName" --output "text")"; then
+      return 1
     fi
-
     stream="${stream%[[:space:]]None}"
-
     ${AWS_CLI} logs get-log-events --log-group-name "$group" --log-stream-name "$stream" \
-    --query "events[].message" --output "text"
-  }; fkkkZZ
+      --query "events[].message" --output "text"
+  }; f
 
 ##########
 ## ECR ###
 ##########
-
+#docker-ecr-login
+# Usage: aws docker-ecr-login
 docker-ecr-login =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     DOCKER_CLI=$(which docker) || { echo "ERROR: docker not installed." 1>&2 ; return 1 ; }
-    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     region=$(${AWS_CLI} configure get region)
     endpoint=$(${AWS_CLI} ecr get-authorization-token --region $region --output text --query authorizationData[].proxyEndpoint)
     passwd=$(${AWS_CLI} ecr get-authorization-token --region $region --output text --query authorizationData[].authorizationToken | base64 --decode | cut -d: -f2)

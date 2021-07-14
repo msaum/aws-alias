@@ -46,8 +46,15 @@ Your alias can also contain a function - which is essentially a wrapper for a sh
 ## References
 - https://docs.aws.amazon.com/cli/latest/userguide/cli-usage-alias.html
 
+## End User Installation
+AWS CLI v2 must be installed first, and configured in the path so that the `aws` command uses the v2 CLI.
+```bash
+$ mkdir ~/.aws/cli
+$ curl https://raw.githubusercontent.com/msaum/aws-alias/master/alias -o ~/.aws/cli/alias
+```
 ## Testing
 The Bats system is used for testing the aliases script.  Bats is a TAP-compliant testing framework for Bash. It provides a simple way to verify that the UNIX programs you write behave as expected.
+For the test scripts to work, Bats will need to be installed.  More information on Bats can be found here:
 - https://github.com/sstephenson/bats
 
 ## Sources

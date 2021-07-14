@@ -338,7 +338,7 @@ unset   AWS_PROFILE
 }
 
 # allow-my-ip-all
-# Usage: aws allow-my-ip-all <security group name>\
+# Usage: aws allow-my-ip-all <security group name>
 @test "Checking allow-my-ip-all" {
   run aws allow-my-ip-all
   echo status: $status
@@ -448,41 +448,177 @@ unset   AWS_PROFILE
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
 }
 
+# find-instances-in-sg
+# aws find-instances-in-sg <network interface group name> <security group id>
+@test "Checking find-instances-in-sg" {
+  run aws find-instances-in-sg
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
 
-#find-instances-in-sg
+  run aws find-instances-in-sg my-fake-network-interface-group-name
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws find-instances-in-sg my-fake-network-interface-group-name my-fake-security-group-id
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
 
 #find-ssh-open
+# Usage: aws find-ssh-open
+@test "Checking find-ssh-open" {
+  run aws find-ssh-open
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
 
 #get-asg-instance-ips
+# Usage: aws get-asg-instance-ips <ASG Name>
+@test "Checking get-asg-instance-ips" {
+  run aws get-asg-instance-ips
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws get-asg-instance-ips my-fake-asg-name
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
 
 #find-host-by-instance-id
+# Usage: aws find-host-by-instance-id <instance ID>
+@test "Checking find-host-by-instance-id" {
+  run aws find-host-by-instance-id
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws find-host-by-instance-id my-fake-instance-id
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
 
 #find-instance-by-public-ip
+# Usage: aws find-instance-by-public-ip <public ip>
+@test "Checking find-instance-by-public-ip" {
+  run aws find-instance-by-public-ip
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws find-instance-by-public-ip my-fake-ip-address
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
 
 #find-nat-gateway-by-public-ip
+# Usage: aws find-nat-gateway-by-public-ip <public ip>
+@test "Checking find-instance-by-public-ip" {
+  run aws find-nat-gateway-by-public-ip
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws find-nat-gateway-by-public-ip my-fake-ip-address
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
 
 #list-igw
+@test "Checking list-igw" {
+  skip
+  }
 
 #list-ngw
+@test "Checking list-ngw" {
+  skip
+  }
 
 #list-vgw
+@test "Checking list-vgw" {
+  skip
+  }
 
 #list-vpn-connection
+@test "Checking list-vpn-connection" {
+  skip
+  }
 
 #list-instance-status
+@test "Checking list-instance-status" {
+  skip
+  }
 
 #list-vpcs
+@test "Checking list-vpcs" {
+  skip
+  }
 
 #list-subnets
+@test "Checking list-subnets" {
+  skip
+  }
 
 #list-routes
+@test "Checking list-routes" {
+  skip
+  }
 
 #get-dns-from-instance-id
+@test "Checking get-dns-from-instance-id" {
+  skip
+  }
 
 #get-instance-id-from-dns
+# Usage: aws get-instance-id-from-dns <dns name>
+@test "Checking get-instance-id-from-dns" {
+  skip
+  run get-instance-id-from-dns
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws get-instance-id-from-dns my-fake-dns-name
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+  }
 
 #log-groups
+@test "Checking log-groups" {
+  run aws log-groups
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+  }
 
 #last-log
+# Usage: aws last-log
+@test "Checking last-log" {
+  run aws last-log
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Missing an argument" ]
+
+  run aws last-log my-fake-log-group
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+  }
 
 #docker-ecr-login
+@test "Checking docker-ecr-login" {
+  run aws docker-ecr-login
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+  }
+
