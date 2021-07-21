@@ -17,11 +17,12 @@ eb = elasticbeanstalk
 ec = elasticache
 sc = servicecatalog
 sg = security-group
+sh = securityhub
 
 tostring =
   !f() {
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed."  1>&2 ; return 1 ; }
-    cat "${1}" | jq 'tostring'
+    cat "${1}" | ${JQ_CLI} 'tostring'
   }; f
 
 # List or set your region
@@ -513,7 +514,7 @@ running-instances =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    $AWS_CLI ec2 describe-instances \
+    ${AWS_CLI} ec2 describe-instances \
     --filter Name=instance-state-name,Values=running \
     --output table \
     --query 'Reservations[].Instances[].{ID: InstanceId,Hostname: PublicDnsName,Name: Tags[?Key==`Name`].Value | [0],Type: InstanceType, Platform: Platform || `Linux`}'
@@ -620,7 +621,7 @@ public-ports =
 my-ip =
   !f() {
     CURL_CLI=$(which curl) || { echo "ERROR: curl not installed." 1>&2 ; return 1 ; }
-    $CURL_CLI https://checkip.amazonaws.com
+    ${CURL_CLI} https://checkip.amazonaws.com
   }; f
 
 # allow-my-ip
@@ -984,7 +985,7 @@ last-log =
 ##########
 ## ECR ###
 ##########
-#docker-ecr-login
+# docker-ecr-login
 # Usage: aws docker-ecr-login
 docker-ecr-login =
   !f() {
@@ -997,4 +998,78 @@ docker-ecr-login =
     ${DOCKER_CLI} login -u AWS -p $passwd $endpoint
   }; f
 
+# ecr-list-repositories
+ecr-list-repositories =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ecr describe-repositories   |  jq -r '.repositories[].repositoryArn'
+  }; f
+
+
+# ecr-scan-findings
+# Usage: aws ecr-scan-findings <repo name>
+ecr-scan-findings =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    [ -z "${1}" ] &&
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws evoke-my-ip <security group name> <protocol> <port>" 1>&2; return 1;  }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ecr describe-image-scan-findings --repository-name "${1}" --image-id imageTag=latest | ${JQ_CLI} -r '.imageScanFindings.findings[] | "\(.severity) \(.name) \(.uri)"' | sort
+  }; f
+
+
+
+
+
+##################
+## Securityhub ###
+##################
+# sh-quick-report
+# Usage: sh-quick-report
+sh-quick-report =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    CRITICAL=$(mktemp --suffix=.json)
+    HIGH=$(mktemp --suffix=.json)
+    MEDIUM=$(mktemp --suffix=.json)
+    LOW=$(mktemp --suffix=.json)
+    INFO=$(mktemp --suffix=.json)
+
+    trap 'echo "EXIT detected with exit status $?" ; rm -f "$CRITICAL"; rm -f "$HIGH"; rm -f "$MEDIUM"; rm -f "$LOW"; rm -f "$INFO"' EXIT
+    echo "Security Hub Quick Summary Report"
+    echo "================================="
+
+    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "CRITICAL","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$CRITICAL"
+
+    printf "Total CRITICAL findings count (if any): $(${JQ_CLI} '.[] | length' < "$CRITICAL" )\n"
+    printf "Unique issues list (if any): \n"
+    ${JQ_CLI} '.Findings[].Title' < $CRITICAL | sort | uniq  | tr -d '"' | sed 's/^/- /'
+
+    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "HIGH","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$HIGH"
+    printf "\nTotal HIGH findings count: $(${JQ_CLI} '.[] | length' < "$HIGH" )\n"
+    echo "Unique issues list, if any:"
+    ${JQ_CLI} '.Findings[].Title' < $HIGH | sort | uniq  | tr -d '"' | sed 's/^/- /'
+
+    aws securityhub get-findings --filters '{"SeverityLabel":[{"Value": "MEDIUM","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$MEDIUM"
+    printf "\nTotal MEDIUM findings count (if any): $(${JQ_CLI} '.[] | length' < "$MEDIUM" )\n"
+    echo "Unique issues list, if any:"
+    ${JQ_CLI} '.Findings[].Title' < $MEDIUM | sort | uniq  | tr -d '"' | sed 's/^/- /'
+
+    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "LOW","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$LOW"
+    printf "\nTotal LOW findings count (if any): $(${JQ_CLI} '.[] | length' < "$LOW" )\n"
+    echo "Unique issues list, if any:"
+    ${JQ_CLI} '.Findings[].Title' < $LOW | sort | uniq  | tr -d '"' | sed 's/^/- /'
+
+    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "INFO","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$INFO"
+    printf "\nTotal INFO findings count (if any): $(${JQ_CLI} '.[] | length' < "$INFO" )\n"
+    echo "Unique issues list, if any:"
+    ${JQ_CLI} '.Findings[].Title' < $INFO | sort | uniq  | tr -d '"' | sed 's/^/- /'
+
+  }; f
 
