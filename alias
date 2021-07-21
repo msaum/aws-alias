@@ -131,12 +131,23 @@ install =
       BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" 1>&2 ; return 1 ; }
       JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, please install with \"brew install jq\"." 1>&2 ;  }
       JP_CLI=$(which jp) || { echo "ERROR: jp not installed, please install with \"brew install jp\"" 1>&2 ;  }
+      GETOPT_CLI=[ -x /usr/local/opt/gnu-getopt/bin/getopt ] ||
+      {
+          echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."  1>&2
+          echo "If you are on Mac OSX, use brew to install Gnu-getopt and/or see https://formulae.brew.sh/formula/gnu-getopt"  1>&2
+          return 1
+      }
     }
     [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
       JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, installing" 1>&2 ; sudo apt update ; sudo apt install -y jq ; }
       JP_CLI=$(which jp) || { echo "ERROR: jp not installed, installing" 1>&2 ; sudo apt update ; sudo apt install -y jp ; }
-		}
+      GETOPT_CLI=$(which getopt) ||
+      {
+          echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."  1>&2
+          return 1
+      }
+    }
 
     CHMOD_CLI=$(which chmod) || { echo "ERROR: chmod not found in path." 1>&2 ; return 1 ; }
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
@@ -154,12 +165,6 @@ install =
     TPUT_CLI=$(which tput) || { echo "ERROR: tput not installed. Please install tput and re-run \"aws install\"." 1>&2 ; return 1 ; }
     DOCKER_CLI=$(which docker) || { echo "WARNING: docker not installed. Please install docker if you plan to use it." 1>&2 ; }
     SED_CLI==$(which sed) || { echo "ERROR: sed not installed. Please install sed and re-run \"aws install\"." 1>&2 ; return 1 ; }
-    GETOPT_CLI=$(which getopt) ||
-    {
-        echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."  1>&2
-        echo "If you are on Mac OSX, use brew to install \"gn--getopt\". https://formulae.brew.sh/formula/gnu-getopt"  1>&2
-        return 1
-    }
 
     # Install aws-rotate-iam keys script from GitHub
     $CURL_CLI --fail -sS \
