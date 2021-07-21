@@ -65,7 +65,7 @@ upgrade =
         return 1
       fi
       $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
-      rm -f /tmp/AWSCLIV2.pkg 2> /dev.null
+      rm -f /tmp/AWSCLIV2.pkg 2> /dev/null
 	    echo "    New version $(aws --version | $CUT_CLI -d' ' -f 1)"
     }
     [ $($UNAME_CLI) = "Linux" ] && {
