@@ -56,9 +56,9 @@ upgrade =
     UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed."  1>&2 ; return 1 ; }
 
     [ $($UNAME_CLI) = "Darwin" ] &&  {
-	    echo "OS: OSX / Darwin"
-	    echo "Current version: $(${AWS_CLI} --version | $CUT_CLI -d' ' -f 1)"
-	    echo "Downloading AWS CLI v2..."
+      echo "OS: OSX / Darwin"
+      echo "Current version: $(${AWS_CLI} --version | $CUT_CLI -d' ' -f 1)"
+      echo "Downloading AWS CLI v2..."
       $CURL_CLI --fail -sS https://awscli.amazonaws.com/AWSCLIV2.pkg -o /tmp/AWSCLIV2.pkg
       if [ ! -f  "/tmp/AWSCLIV2.pkg" ]; then
         echo "ERROR: Unable to download: https://awscli.amazonaws.com/AWSCLIV2.pkg"  1>&2
@@ -66,31 +66,31 @@ upgrade =
       fi
       $SUDO_CLI installer -pkg /tmp/AWSCLIV2.pkg -target /
       rm -f /tmp/AWSCLIV2.pkg 2> /dev/null
-	    echo "    New version $(aws --version | $CUT_CLI -d' ' -f 1)"
+      echo "    New version $(aws --version | $CUT_CLI -d' ' -f 1)"
     }
     [ $($UNAME_CLI) = "Linux" ] && {
       echo "OS: Linux"
-		  rm -f /tmp/awscliv2.zip 2> /dev/null
-		  rm -rf /tmp/aws/ 2> /dev/null
-	    echo "Downloading AWS CLI v2..."
-	    $CURL_CLI --fail -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
+      rm -f /tmp/awscliv2.zip 2> /dev/null
+      rm -rf /tmp/aws/ 2> /dev/null
+      echo "Downloading AWS CLI v2..."
+      $CURL_CLI --fail -sS "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "/tmp/awscliv2.zip"
       if [ ! -f  "/tmp/awscliv2.zip" ]; then
         echo "ERROR: Unable to download: https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip"  1>&2
         return 1
       fi
-	    $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
-	    CURRENT_VER=$(${AWS_CLI} --version | $CUT_CLI -d' ' -f 1)
-	    NEW_VER=$(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)
-	    echo "Current version: $CURRENT_VER"
-	    echo "    New version: $NEW_VER"
-	    if [ "${CURRENT_VER}" = "${NEW_VER}" ]; then
-	      echo "Versions are the same, no changes."
-	    else
-  	    $SUDO_CLI /tmp/aws/install --update
+      $(cd /tmp && $UNZIP_CLI awscliv2.zip && rm -f /tmp/awscliv2.zip) 2> /dev/null
+      CURRENT_VER=$(${AWS_CLI} --version | $CUT_CLI -d' ' -f 1)
+      NEW_VER=$(/tmp/aws/dist/aws --version | $CUT_CLI -d' ' -f 1)
+      echo "Current version: $CURRENT_VER"
+      echo "    New version: $NEW_VER"
+      if [ "${CURRENT_VER}" = "${NEW_VER}" ]; then
+        echo "Versions are the same, no changes."
+      else
+        $SUDO_CLI /tmp/aws/install --update
       fi
-		  rm -rf /tmp/aws/ 2> /dev/null
-		}
-		$AWS_CLI update-aliases
+      rm -rf /tmp/aws/ 2> /dev/null
+    }
+    $AWS_CLI update-aliases
   }; f
 
 # Check for the latest version of the AWS CLI v2
@@ -126,7 +126,7 @@ install =
   !f() {
     UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed." ; return 1 ; }
 
-	  [ $($UNAME_CLI) = "Darwin" ] &&  {
+    [ $($UNAME_CLI) = "Darwin" ] &&  {
       echo "OS: OSX / Darwin"
       BREW_CLI=$(which brew) || { echo "ERROR: brew not installed.  Please install brew: https://brew.sh/" 1>&2 ; return 1 ; }
       JQ_CLI=$(which jq) || { echo "ERROR: jq not installed, please install with \"brew install jq\"." 1>&2 ;  }
