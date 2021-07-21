@@ -90,6 +90,7 @@ upgrade =
       fi
 		  rm -rf /tmp/aws/ 2> /dev/null
 		}
+		$AWS_CLI update-aliases
   }; f
 
 # Check for the latest version of the AWS CLI v2
