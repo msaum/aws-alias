@@ -18,7 +18,6 @@ ec = elasticache
 sc = servicecatalog
 sg = security-group
 sh = securityhub
-
 tostring =
   !f() {
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed."  1>&2 ; return 1 ; }
@@ -152,7 +151,7 @@ install =
     PIP3_CLI=$(which pip3) || { echo "ERROR: pip3 not installed.  Please install pip3 and re-run \"aws install\"." 1>&2 ; return 1 ; }
     CMP_CLI=$(which cmp) || { echo "ERROR: cmp not installed. Please install cmp and re-run \"aws install\"." 1>&2 ; return 1 ; }
     TPUT_CLI=$(which tput) || { echo "ERROR: tput not installed. Please install tput and re-run \"aws install\"." 1>&2 ; return 1 ; }
-    DOCKER_CLI=$(which docker) || { echo "ERROR: docker not installed. Please install docker and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    DOCKER_CLI=$(which docker) || { echo "WARNING: docker not installed. Please install docker if you plan to use it." 1>&2 ; }
     SED_CLI==$(which sed) || { echo "ERROR: sed not installed. Please install sed and re-run \"aws install\"." 1>&2 ; return 1 ; }
     GETOPT_CLI=$(which getopt) ||
     {
