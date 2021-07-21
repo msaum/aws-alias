@@ -1,14 +1,10 @@
 #!/usr/bin/env bats
 
-
-#load bats-assert/load
-#load bats-support/load
-
 # Copy the aliases file to the local ~/.aws/cli directory so it becomes operative
 cp ../alias ~/.aws/cli/alias
 
-export  AWS_DEFAULT_PROFILE=not-a-valid-aws-profile-name
-unset   AWS_PROFILE
+unset AWS_DEFAULT_PROFILE
+unset AWS_PROFILE
 
 # Localstack endpoint
 # https://pythonawesome.com/localstack-a-fully-functional-local-aws-cloud-stack/
@@ -78,7 +74,7 @@ unset   AWS_PROFILE
 @test "Checking iam-keys-days-remaining" {
   run aws iam-keys-days-remaining
   [ "$status" -eq 1 ]
-  [ "${lines[0]}" = "ERROR: Unable to locate credentials." ]
+  [ "${lines[0]}" = "Can't determine your AWS Profile. Set AWS_PROFILE, or AWS_DEFAULT_PROFILE" ]
 }
 
 #mfa
@@ -490,7 +486,7 @@ unset   AWS_PROFILE
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
 }
 
-#find-host-by-instance-id
+# find-host-by-instance-id
 # Usage: aws find-host-by-instance-id <instance ID>
 @test "Checking find-host-by-instance-id" {
   run aws find-host-by-instance-id

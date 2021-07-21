@@ -152,6 +152,7 @@ install =
     CMP_CLI=$(which cmp) || { echo "ERROR: cmp not installed. Please install cmp and re-run \"aws install\"." 1>&2 ; return 1 ; }
     TPUT_CLI=$(which tput) || { echo "ERROR: tput not installed. Please install tput and re-run \"aws install\"." 1>&2 ; return 1 ; }
     DOCKER_CLI=$(which docker) || { echo "ERROR: docker not installed. Please install docker and re-run \"aws install\"." 1>&2 ; return 1 ; }
+    SED_CLI==$(which sed) || { echo "ERROR: sed not installed. Please install sed and re-run \"aws install\"." 1>&2 ; return 1 ; }
     GETOPT_CLI=$(which getopt) ||
     {
         echo "ERROR: gnugetopt not installed.  Please install GNU getopt and re-run \"aws install\"."  1>&2
@@ -242,10 +243,10 @@ iam-keys-days-remaining =
     UNAME_CLI=$(which uname) || { echo "ERROR: uname not installed."  1>&2 ; return 1 ; }
 
     # Set your aws username
-    if  USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g') 2> /dev/null; then
+    USERNAME=$($AWS_CLI sts get-caller-identity | $JQ_CLI .Arn | $SED_CLI 's/.*user\///g' | $SED_CLI 's/\"//g') 2> /dev/null || {
       echo "ERROR: Unable to locate credentials."  1>&2
       return 1
-    fi
+    }
 
     if [ "${USERNAME}" = "" ]; then
       echo "ERROR: Unable to determine a user name"  1>&2
@@ -255,7 +256,7 @@ iam-keys-days-remaining =
     # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
     CDATE=$($AWS_CLI iam list-access-keys --output json --user-name ${USERNAME} | $GREP_CLI CreateDate | $CUT_CLI -c 28- | $REV_CLI | $CUT_CLI -c 8- | $REV_CLI |  $SED_CLI -E s/T/\ /g)
 
-    # Use CMPerent code based on the OS, since Darwin uses a CMPerent version of the date command
+    # Use code based on the OS, since Darwin uses a different implementation of the date command
     [ $($UNAME_CLI) = "Darwin" ] &&  {
         # Get the aws create date for your key ..sample output "2021-02-26T14:41:05+00:00"
         CDATESTRING=$($DATE_CLI -jf "%Y-%m-%d %T" "${CDATE}")
@@ -276,9 +277,9 @@ iam-keys-days-remaining =
         NOW=$($DATE_CLI +"%s")
         DAYSTOEXPIRE=$((($EXDATE - $NOW)/86400))
     }
-    # Display to the user the number of days before the aws keys expire
-    printf 'There are %d days left until your aws key expires\n' "${DAYSTOEXPIRE}"
 
+    # Display to the user the number of days before the aws keys expire
+    printf 'For AWS Profile: %s, there are %d days left until your aws key expires\n' "$PROFILE" "${DAYSTOEXPIRE}"
     }; f
 
 ###########
@@ -422,8 +423,8 @@ list-virtual-mfa =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    [ "${1}" ]    && $AWS_CLI iam list-mfa-devices --user-name ${1} | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
-    [ -z "${1}" ] && $AWS_CLI iam list-mfa-devices | jq -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
+    [ "${1}" ]    && $AWS_CLI iam list-mfa-devices --user-name ${1} | $JQ_CLI -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
+    [ -z "${1}" ] && $AWS_CLI iam list-mfa-devices | $JQ_CLI -r '.MFADevices[] | "Enabled: \(.EnableDate), ARN: \(.SerialNumber)"'
   }; f
 
 
@@ -441,7 +442,7 @@ delete-virtual-mfa =
         return 1
     fi
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    account_id=$($AWS_CLI sts get-caller-identity --output json | jq -r '.Account')
+    account_id=$($AWS_CLI sts get-caller-identity --output json | $JQ_CLI -r '.Account')
     $AWS_CLI iam delete-virtual-mfa-device--serial-number "arn:aws:iam::${account_id}:mfa/$1"
   }; f
 
@@ -483,13 +484,14 @@ generate-sts-token =
 assume =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ "${1}" ] || { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws assume <role-arn>"1>&2 ; return 1; }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
 
     res=$($AWS_CLI sts assume-role --role-arn ${1} --role-session-name session)
     if echo $res | grep -q AccessKeyId; then
         echo $res \
-        | jq -r '
+        | $JQ_CLI -r '
         "","[\(.Credentials.AccessKeyId)]",
         "aws_access_key_id     = \(.Credentials.AccessKeyId)",
         "aws_secret_access_key = \(.Credentials.SecretAccessKey)",
@@ -497,7 +499,7 @@ assume =
         "aws_security_token    = \(.Credentials.SessionToken)"
         ' \
         >> ${HOME}/.aws/credentials
-        echo $res | jq -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
+        echo $res | $JQ_CLI -r '"AWS_PROFILE=\(.Credentials.AccessKeyId)"'
     fi
   }; f
 
@@ -825,11 +827,12 @@ find-ssh-open =
 get-asg-instance-ips =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws get-asg-instance-ips <ASG Name>" 1>&2; return 1;  }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     asg_name=${1}
-    ${AWS_CLI} ec2 describe-instances --filters "Name=tag:aws:autoscaling:groupName,Values=${asg_name}" | jq -r '.Reservations[].Instances[].PrivateIpAddress'
+    ${AWS_CLI} ec2 describe-instances --filters "Name=tag:aws:autoscaling:groupName,Values=${asg_name}" | $JQ_CLI -r '.Reservations[].Instances[].PrivateIpAddress'
   }; f
 
 # find-host-by-instance-id
@@ -837,11 +840,13 @@ get-asg-instance-ips =
 find-host-by-instance-id =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed."."" 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-host-by-instance-id <instance ID>" 1>&2; return 1;  }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    instance_id=${1}
-    ${AWS_CLI} ec2 describe-instances --filters "Name=instance-id,Values=${instance_id}" | jq -r '.Reservations[].Instances[].PrivateIpAddress' | sed -E 's/\./-/g; s/^/ip-/'
+    instance_id="${1}"
+    ${AWS_CLI} ec2 describe-instances --filters "Name=instance-id,Values=${instance_id}" | ${JQ_CLI} -r '.Reservations[].Instances[].PrivateIpAddress' | $SED_CLI -E 's/\./-/g; s/^/ip-/'
   }; f
 
 #find-instance-by-public-ip
@@ -849,10 +854,11 @@ find-host-by-instance-id =
 find-instance-by-public-ip =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-instance-by-public-ip <public ip>" 1>&2; return 1;  }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    ${AWS_CLI} ec2 describe-instances --filters "Name=ip-address,Values=$1" | jq -r '.Reservations[].Instances[].Tags[] | select(.Key == "Name").Value'
+    ${AWS_CLI} ec2 describe-instances --filters "Name=ip-address,Values=$1" | $JQ_CLI -r '.Reservations[].Instances[].Tags[] | select(.Key == "Name").Value'
   }; f
 
 #find-nat-gateway-by-public-ip
@@ -860,10 +866,11 @@ find-instance-by-public-ip =
 find-nat-gateway-by-public-ip =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
       { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws find-nat-gateway-by-public-ip <public ip>" 1>&2; return 1;  }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    ${AWS_CLI} ec2 describe-nat-gateways | jq -r '.NatGateways[] | select(.NatGatewayAddresses[].PublicIp == "'$1'") | .Tags[] | select(.Key == "Name").Value'
+    ${AWS_CLI} ec2 describe-nat-gateways | $JQ_CLI -r '.NatGateways[] | select(.NatGatewayAddresses[].PublicIp == "'$1'") | .Tags[] | select(.Key == "Name").Value'
   }; f
 
 #list-igw
@@ -949,8 +956,10 @@ get-instance-id-from-dns =
 log-groups =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    SED_CLI==$(which sed) || { echo "ERROR: sed not installed." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    ${AWS_CLI} logs describe-log-groups | jq '.logGroups[].logGroupName'  | sed 's/\"//g'
+    ${AWS_CLI} logs describe-log-groups | $JQ_CLI '.logGroups[].logGroupName'  | $SED_CLI 's/\"//g'
   }; f
 
 #last-log
