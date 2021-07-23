@@ -53,9 +53,15 @@ $ mkdir ~/.aws/cli
 $ curl https://raw.githubusercontent.com/msaum/aws-alias/master/alias -o ~/.aws/cli/alias
 ```
 ## Testing
+### Summary
 The Bats system is used for testing the aliases script.  Bats is a TAP-compliant testing framework for Bash. It provides a simple way to verify that the UNIX programs you write behave as expected.
 For the test scripts to work, Bats will need to be installed.  More information on Bats can be found here:
 - https://github.com/sstephenson/bats
+### Installation
+- Install most reliably from source
+  - https://bats-core.readthedocs.io/en/latest/installation.html#installing-bats-from-source
+- Install Gnu Parallel to enable running BATS jobs in parallel with the `--jobs` parameter
+
 
 ## Sources
 - [https://github.com/awslabs/awscli-aliases/blob/master/alias](https://github.com/awslabs/awscli-aliases/blob/master/alias) ([1](./alias#L7), [2](./alias#L12), [3](./alias#L18), [8](./alias#L65), [9](./alias#L67), [9](./alias#L81), [16](./alias#L155), [17](./alias#L160), [18](./alias#L164), [19](./alias#L175), [20](./alias#L177), [21](./alias#L184), [22](./alias#L189), [23](./alias#L196), [24](./alias#L207), [25](./alias#L212), [26](./alias#L218), [27](./alias#L224), [28](./alias#L229))

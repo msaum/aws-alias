@@ -1,14 +1,18 @@
 #!/usr/bin/env bats
 
-# Copy the aliases file to the local ~/.aws/cli directory so it becomes operative
-cp ../alias ~/.aws/cli/alias
+setup () {
+  # get the containing directory of this file
+  # use $BATS_TEST_FILENAME instead of ${BASH_SOURCE[0]} or $0,
+  # as those will point to the bats executable's location or the preprocessed file respectively
+  DIR="$( cd "$( dirname "$BATS_TEST_FILENAME" )" >/dev/null 2>&1 && pwd )"
 
-unset AWS_DEFAULT_PROFILE
-unset AWS_PROFILE
+  # Copy the aliases file to the local ~/.aws/cli directory so it becomes operative
+  cp "${DIR}/../alias" ~/.aws/cli/alias
 
-# Localstack endpoint
-# https://pythonawesome.com/localstack-a-fully-functional-local-aws-cloud-stack/
-# --endpoint-url http://localhost:4566 --region us-east-1
+  # Zero out any AWS Profile Settings
+  unset AWS_DEFAULT_PROFILE
+  unset AWS_PROFILE
+}
 
 
 #tostring
@@ -57,7 +61,6 @@ unset AWS_PROFILE
 # Currently just testing failure states
 # The function itself gets exercised.  Hard to simulate rotating a perm key.
 @test "Checking rotate-iam-keys" {
-  unset PROFILE
   run aws rotate-iam-keys
   [ "$status" -eq 1 ]
   [ "${lines[0]}" = "Your long term credentials must be provided as an argument." ]
@@ -349,7 +352,7 @@ unset AWS_PROFILE
 
 #revoke-my-ip-all
 # Usage: aws revoke-my-ip-all <security group name>
-@test "Checking allow-my-ip-all" {
+@test "Checking revoke-my-ip-all" {
   run aws revoke-my-ip-all
   echo status: $status
   [ "$status" -eq 1 ]
@@ -516,7 +519,7 @@ unset AWS_PROFILE
 
 #find-nat-gateway-by-public-ip
 # Usage: aws find-nat-gateway-by-public-ip <public ip>
-@test "Checking find-instance-by-public-ip" {
+@test "Checking find-nat-gateway-by-public-ip" {
   run aws find-nat-gateway-by-public-ip
   echo status: $status
   [ "$status" -eq 1 ]
@@ -531,47 +534,47 @@ unset AWS_PROFILE
 #list-igw
 @test "Checking list-igw" {
   skip
-  }
+}
 
 #list-ngw
 @test "Checking list-ngw" {
   skip
-  }
+}
 
 #list-vgw
 @test "Checking list-vgw" {
   skip
-  }
+}
 
 #list-vpn-connection
 @test "Checking list-vpn-connection" {
   skip
-  }
+}
 
 #list-instance-status
 @test "Checking list-instance-status" {
   skip
-  }
+}
 
 #list-vpcs
 @test "Checking list-vpcs" {
   skip
-  }
+}
 
 #list-subnets
 @test "Checking list-subnets" {
   skip
-  }
+}
 
 #list-routes
 @test "Checking list-routes" {
   skip
-  }
+}
 
 #get-dns-from-instance-id
 @test "Checking get-dns-from-instance-id" {
   skip
-  }
+}
 
 #get-instance-id-from-dns
 # Usage: aws get-instance-id-from-dns <dns name>
@@ -586,7 +589,7 @@ unset AWS_PROFILE
   echo status: $status
   [ "$status" -eq 1 ]
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
-  }
+}
 
 #log-groups
 @test "Checking log-groups" {
@@ -594,7 +597,7 @@ unset AWS_PROFILE
   echo status: $status
   [ "$status" -eq 1 ]
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
-  }
+}
 
 #last-log
 # Usage: aws last-log
@@ -608,7 +611,7 @@ unset AWS_PROFILE
   echo status: $status
   [ "$status" -eq 1 ]
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
-  }
+}
 
 #docker-ecr-login
 @test "Checking docker-ecr-login" {
@@ -616,5 +619,5 @@ unset AWS_PROFILE
   echo status: $status
   [ "$status" -eq 1 ]
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
-  }
+}
 
