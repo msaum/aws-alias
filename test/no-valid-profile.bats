@@ -531,6 +531,15 @@ setup () {
   [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
 }
 
+# list-hosts-csv
+@test "Checking list-hosts-csv" {
+  run aws list-hosts-csv
+  echo status: $status
+  [ "$status" -eq 1 ]
+  [ "${lines[0]}" = "ERROR: Unable to determine your AWS user credentials.  Check your AWS credentials configuration." ]
+}
+
+
 #list-igw
 @test "Checking list-igw" {
   skip

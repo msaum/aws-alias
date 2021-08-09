@@ -876,6 +876,16 @@ find-nat-gateway-by-public-ip =
     ${AWS_CLI} ec2 describe-nat-gateways | $JQ_CLI -r '.NatGateways[] | select(.NatGatewayAddresses[].PublicIp == "'$1'") | .Tags[] | select(.Key == "Name").Value'
   }; f
 
+# list-hosts-csv
+# Usage: list-hosts-csv
+list-hosts-csv =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    ${AWS_CLI} whoami > /dev/null || { return 1 ; }
+    ${AWS_CLI} ec2 describe-instances | ${JQ_CLI} -r '.Reservations[] | .Instances[] | [.InstanceID, .InstanceType, .PrivateIpAddress, .SubnetId, (.Tags[]? | select(.Key=="Name") | .Value)] | @csv'
+  }; f
+
 #list-igw
 # Usage: list-igw <public ip>
 list-igw = ec2 describe-internet-gateways \
