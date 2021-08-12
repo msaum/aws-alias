@@ -1,4 +1,3 @@
-#!/usr/bin/env bash
 [toplevel]
 
 # AWS CLI v2 Return Codes
@@ -193,7 +192,7 @@ install =
       # Linux typical location
       [ -d ${HOME}/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ${HOME}/.local) ; }
       # Look for the aws-mfa binary
-      AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
+      AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 2> /dev/null)
       [ -x $AWS_MFA_CLI ] && {
         echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
       }
@@ -311,7 +310,7 @@ mfa =
       # Linux typical location
       [ -d ${HOME}/.local ] && { AWS_MFA_SEARCH_PATH=$(echo ${AWS_MFA_SEARCH_PATH} ${HOME}/.local) ; }
       # Look for the aws-mfa binary
-      AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 )
+      AWS_MFA_CLI=$($FIND_CLI ${AWS_MFA_SEARCH_PATH} -name aws-mfa -type f | $SORT_CLI -r | $HEAD_CLI -1 2> /dev/null )
       [ -x $AWS_MFA_CLI ] && {
         echo "SUCCESS: aws-mfa installed and found at: $AWS_MFA_CLI"
       }
@@ -922,7 +921,7 @@ list-vpcs = ec2 describe-vpcs \
         "Vpcs[].{VpcId: VpcId, CidrBlock: CidrBlock,  Name: Tags[?Key=='Name'].Value| [0], IsDefault: IsDefault}" \
       --output table
 
-#list-subnets
+# list-subnets
 # Usage: aws list-subnets
 list-subnets = ec2 describe-subnets \
     --query "Subnets[].{AZ:AvailabilityZone,VpcId:VpcId,SubnetId:SubnetId,CidrBlock:CidrBlock,    Name: Tags[?Key=='Name'].Value| [0]}" \
