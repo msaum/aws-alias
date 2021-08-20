@@ -538,7 +538,7 @@ amazon-linux-amis =
   !f() {
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
-    $AWS_CLI ec2 describe-images \
+    $AWS_CLI ec2 \
     --filter \
       Name=owner-alias,Values=amazon \
       Name=name,Values="amzn-ami-hvm-*" \
@@ -1026,7 +1026,7 @@ ecr-scan-findings =
     AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
     JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
     [ -z "${1}" ] &&
-      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws evoke-my-ip <security group name> <protocol> <port>" 1>&2; return 1;  }
+      { echo "ERROR: Missing an argument" 1>&2 ; echo "Usage: aws ecr-scan-findings <repo name>" 1>&2; return 1;  }
     ${AWS_CLI} whoami > /dev/null || { return 1 ; }
     ${AWS_CLI} ecr describe-image-scan-findings --repository-name "${1}" --image-id imageTag=latest | ${JQ_CLI} -r '.imageScanFindings.findings[] | "\(.severity) \(.name) \(.uri)"' | sort
   }; f
@@ -1084,3 +1084,14 @@ sh-quick-report =
 
   }; f
 
+#############
+## Lambda ###
+#############
+lambda-list-csv =
+    !f() {
+        AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+        JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+
+        $AWS_CLI whoami > /dev/null || { return 1 ; }
+        $AWS_CLI lambda list-functions | jq -r '.Functions[] | [.FunctionName, .Description, .FunctionArn, .Runtime, .Role,.Handler, .CodeSize, .Timeout, .MemorySize, .LastModified, .TracingConfig[]] | @csv'
+    }; f
