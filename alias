@@ -1052,35 +1052,54 @@ sh-quick-report =
     LOW=$(mktemp --suffix=.json)
     INFO=$(mktemp --suffix=.json)
 
-    trap 'echo "EXIT detected with exit status $?" ; rm -f "$CRITICAL"; rm -f "$HIGH"; rm -f "$MEDIUM"; rm -f "$LOW"; rm -f "$INFO"' EXIT
+    trap 'rm -f "$CRITICAL"; rm -f "$HIGH"; rm -f "$MEDIUM"; rm -f "$LOW"; rm -f "$INFO"' EXIT
     echo "Security Hub Quick Summary Report"
     echo "================================="
 
-    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "CRITICAL","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$CRITICAL"
+    ${AWS_CLI}  securityhub get-findings --output json --filters '{"SeverityLabel":[{"Value": "CRITICAL","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$CRITICAL"
 
     printf "Total CRITICAL findings count (if any): $(${JQ_CLI} '.[] | length' < "$CRITICAL" )\n"
     printf "Unique issues list (if any): \n"
     ${JQ_CLI} '.Findings[].Title' < $CRITICAL | sort | uniq  | tr -d '"' | sed 's/^/- /'
 
-    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "HIGH","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$HIGH"
+    ${AWS_CLI}  securityhub get-findings --output json --filters '{"SeverityLabel":[{"Value": "HIGH","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$HIGH"
     printf "\nTotal HIGH findings count: $(${JQ_CLI} '.[] | length' < "$HIGH" )\n"
     echo "Unique issues list, if any:"
     ${JQ_CLI} '.Findings[].Title' < $HIGH | sort | uniq  | tr -d '"' | sed 's/^/- /'
 
-    aws securityhub get-findings --filters '{"SeverityLabel":[{"Value": "MEDIUM","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$MEDIUM"
+    ${AWS_CLI} securityhub get-findings --output json --filters '{"SeverityLabel":[{"Value": "MEDIUM","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$MEDIUM"
     printf "\nTotal MEDIUM findings count (if any): $(${JQ_CLI} '.[] | length' < "$MEDIUM" )\n"
     echo "Unique issues list, if any:"
     ${JQ_CLI} '.Findings[].Title' < $MEDIUM | sort | uniq  | tr -d '"' | sed 's/^/- /'
 
-    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "LOW","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$LOW"
+    ${AWS_CLI}  securityhub get-findings --output json --filters '{"SeverityLabel":[{"Value": "LOW","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$LOW"
     printf "\nTotal LOW findings count (if any): $(${JQ_CLI} '.[] | length' < "$LOW" )\n"
     echo "Unique issues list, if any:"
     ${JQ_CLI} '.Findings[].Title' < $LOW | sort | uniq  | tr -d '"' | sed 's/^/- /'
 
-    ${AWS_CLI}  securityhub get-findings --filters '{"SeverityLabel":[{"Value": "INFO","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$INFO"
+    ${AWS_CLI}  securityhub get-findings --output json  --filters '{"SeverityLabel":[{"Value": "INFO","Comparison":"EQUALS"}],"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$INFO"
     printf "\nTotal INFO findings count (if any): $(${JQ_CLI} '.[] | length' < "$INFO" )\n"
     echo "Unique issues list, if any:"
     ${JQ_CLI} '.Findings[].Title' < $INFO | sort | uniq  | tr -d '"' | sed 's/^/- /'
+
+  }; f
+
+# sh-findings-csv
+# Usage: sh-findings-csv
+sh-findings-csv =
+  !f() {
+    AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+    JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+    SED_CLI=$(which sed) || { echo "ERROR: sed not installed." 1>&2 ; return 1 ; }
+
+    $AWS_CLI whoami > /dev/null || { return 1 ; }
+    FINDINGS=$(mktemp --suffix=.json)
+
+    trap 'rm -f "$FINDINGS"' EXIT
+
+    ${AWS_CLI} securityhub get-findings --output json --filters '{"WorkflowStatus": [{"Value":"NEW","Comparison":"EQUALS"}],"RecordState":[{"Value":"ACTIVE","Comparison":"EQUALS"}]}' > "$FINDINGS"
+    echo "Title, Description, Region, GeneratorId, FirstObservedAt, LastObservedAt, CreatedAt, UpdatedAt, Severity.Label, Id, Resources.Type, Resources.Id, Remediation.Text, Remediation.Url"
+    ${JQ_CLI} '.Findings[]| [.Title, .Description, .Region, .GeneratorId, .FirstObservedAt, .LastObservedAt, .CreatedAt, .UpdatedAt, .Severity.Label, .Id, .Resources[0].Type?, .Resources[0].Id?, .Remediation[]?.Text, .Remediation[]?.Url] | @csv'  < "$FINDINGS" |  ${SED_CLI} 's/^\"//' | sed 's/\"$//' | ${SED_CLI} 's/\\\"/\"/g'
 
   }; f
 
@@ -1093,5 +1112,17 @@ lambda-list-csv =
         JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
 
         $AWS_CLI whoami > /dev/null || { return 1 ; }
-        $AWS_CLI lambda list-functions | jq -r '.Functions[] | [.FunctionName, .Description, .FunctionArn, .Runtime, .Role,.Handler, .CodeSize, .Timeout, .MemorySize, .LastModified, .TracingConfig[]] | @csv'
+        $AWS_CLI lambda list-functions --output json | jq -r '.Functions[] | [.FunctionName, .Description, .FunctionArn, .Runtime, .Role,.Handler, .CodeSize, .Timeout, .MemorySize, .LastModified, .TracingConfig[]] | @csv'
+    }; f
+
+###################
+## Event Bridge ###
+###################
+events-list-csv =
+    !f() {
+        AWS_CLI=$(which aws) || { echo "ERROR: I can't seem to find the AWS binary in the path." 1>&2 ; return 1 ; }
+        JQ_CLI=$(which jq) || { echo "ERROR: jq not installed." 1>&2 ; return 1 ; }
+
+        $AWS_CLI whoami > /dev/null || { return 1 ; }
+        $AWS_CLI events list-rules --output json | jq -r '.Rules[] | [.Name, .EventBusName, .Description, .Arn, .State, .ScheduleExpression] | @csv'
     }; f
