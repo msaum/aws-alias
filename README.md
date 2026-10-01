@@ -4,6 +4,10 @@ This collection provides 75 top-level aliases for AWS CLI 2.37.7 or newer. Pytho
 
 Native aliases expand into AWS commands. Workflows use a managed companion at `~/.aws/cli/aws-alias/current/aws_alias_manager.py`. The alias file and companion switch together through one pointer.
 
+## Documentation
+
+[Browse all commands](docs/README.md) for purpose, arguments, and synthetic output examples. Start with [Getting started](docs/getting-started.md), or open [Maintenance and recovery](docs/maintenance.md) and [Troubleshooting](docs/troubleshooting.md). References cover identity/IAM, compute, networking, security groups, reports, utilities, service shortcuts, and retired names.
+
 ## Install
 
 Use a clean, committed checkout of this repository. The installation checks the active AWS CLI version and validates the bundle manifest.

@@ -17,7 +17,7 @@ Helper output defaults to JSON. `--aws-output text|table` formats the resulting 
 | `sg-rules` | Group ID; emits ingress/egress rows with IPv4, IPv6, group and prefix-list peers. |
 | `get-group-id` | Exact group name and VPC ID; exactly one match is required. |
 | `public-ports` | Public ingress peers `0.0.0.0/0` and `::/0`, preserving protocol and port ranges. |
-| `find-ssh-open` | Public ingress TCP rules whose range includes 22, and all-protocol rules. |
+| `find-ssh-open` | Ingress TCP rules whose range includes 22, and all-protocol rules; includes restricted peers, so inspect Peer to determine exposure. |
 | `allow-my-ip`, `revoke-my-ip` | Group ID, tcp/udp, port, optional single-host CIDR; explicit profile/region. Only the exact requested rule changes. Duplicate grants and absent revocations return Changed=false; other errors fail. |
 | `ami-snapshots` | AMI ID; emits sorted distinct EBS snapshot IDs. |
 | `list-instances` | Exact region names or `all`; emits Region, InstanceId, Name, InstanceType, PublicIpAddress and State. `all` discovers enabled regions. Region failures are reported with completed data and exit 1. |
