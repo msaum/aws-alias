@@ -64,4 +64,3 @@ usage: aws my-ip [-h] [--profile PROFILE] [--region REGION]
                  [--endpoint-url ENDPOINT_URL] [--ca-bundle CA_BUNDLE]
                  [--output {json,text,table}]
 ```
-

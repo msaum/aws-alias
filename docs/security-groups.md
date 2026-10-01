@@ -351,4 +351,3 @@ usage: aws find-ssh-open [-h] [--profile PROFILE] [--region REGION]
 ```
 
 For a report limited to rules open to everyone, inspect `public-ports` and select TCP ranges containing 22 or all-protocol rules.
-

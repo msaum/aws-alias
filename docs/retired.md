@@ -159,4 +159,3 @@ aws delete-ami
 ```text
 ERROR: delete-ami is retired. Use ami-snapshots <ami-id> to list the associated snapshots.
 ```
-

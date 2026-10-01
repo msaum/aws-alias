@@ -451,4 +451,3 @@ usage: aws ami-snapshots [-h] [--profile PROFILE] [--region REGION]
                          [--output {json,text,table}]
                          ami_id
 ```
-

@@ -232,4 +232,3 @@ usage: aws find-users-without-mfa [-h] [--profile PROFILE] [--region REGION]
                                   [--ca-bundle CA_BUNDLE]
                                   [--output {json,text,table}]
 ```
-

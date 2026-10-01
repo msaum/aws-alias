@@ -349,4 +349,3 @@ Native expansion:
 ```text
 aws ec2 describe-route-tables  --query "RouteTables[].{RouteTableId:RouteTableId, VpcId:VpcId, Name: Tags[?Key=='Name'].Value| [0], GatewayId: Routes[].{GatewayId:GatewayId,DestinationCidrBlock: DestinationCidrBlock} }  "  --output table
 ```
-
