@@ -1,0 +1,43 @@
+name: Alias contracts
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, ubuntu-24.04-arm, macos-14, macos-15-intel]
+        cli: ['2.37.7', current]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      AWS_EC2_METADATA_DISABLED: 'true'
+      AWS_PAGER: ''
+      AWS_CLI_AUTO_PROMPT: 'off'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install test tools
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            brew install bats-core shellcheck
+          else
+            sudo apt-get update
+            sudo apt-get install -y bats shellcheck gnupg groff less unzip
+          fi
+      - name: Install verified official CLI
+        run: python3 scripts/install_ci_cli.py '${{ matrix.cli }}'
+      - name: Validate bundle and shell bodies
+        run: python3 scripts/check_aliases.py --aws-models --shellcheck
+      - name: Run isolated contracts and loopback fixtures
+        run: python3 -m unittest discover -s test -v
+      - name: Run shell entry checks
+        run: bats test/no-valid-profile.bats

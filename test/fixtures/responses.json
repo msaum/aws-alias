@@ -1,0 +1,21 @@
+{
+  "instances": {"Reservations": [{"Instances": [
+    {"InstanceId": "i-0123456789abcdef0", "InstanceType": "t3.micro", "PrivateIpAddress": "10.0.0.1", "PublicIpAddress": "203.0.113.5", "PrivateDnsName": "service.internal", "PublicDnsName": "public.example", "SubnetId": "subnet-0123", "State": {"Name": "running"}, "Tags": [{"Key": "Other", "Value": "first"}, {"Key": "Name", "Value": "quoted, \"name\"\nsecond line"}]},
+    {"InstanceId": "i-0123456789abcdef1", "InstanceType": "t3.micro", "PrivateIpAddress": "10.0.0.2", "State": {"Name": "stopped"}}
+  ]}]},
+  "groups": {"SecurityGroups": [{"GroupId": "sg-0123", "GroupName": "test", "VpcId": "vpc-0123", "IpPermissions": [
+    {"IpProtocol": "tcp", "FromPort": 0, "ToPort": 100, "IpRanges": [{"CidrIp": "0.0.0.0/0"}], "Ipv6Ranges": [{"CidrIpv6": "::/0"}]},
+    {"IpProtocol": "-1", "UserIdGroupPairs": [{"GroupId": "sg-0456"}], "Ipv6Ranges": [{"CidrIpv6": "::/0"}]},
+    {"IpProtocol": "udp", "FromPort": 22, "ToPort": 22, "IpRanges": [{"CidrIp": "192.0.2.1/32"}]}
+  ], "IpPermissionsEgress": [{"IpProtocol": "-1", "IpRanges": [{"CidrIp": "0.0.0.0/0"}]}]}]},
+  "findings": {"Findings": [
+    {"Title": "quote, \"example\"\nnew line", "Description": "description", "Region": "us-east-1", "GeneratorId": "generator", "Id": "finding-1", "Severity": {"Label": "INFORMATIONAL"}, "Resources": [{"Type": "AwsEc2Instance", "Id": "i-0123"}, {"Type": "AwsEc2Instance", "Id": "i-0456"}], "Remediation": {"Recommendation": {"Text": "Fix, then verify", "Url": "https://example.com/fix"}}},
+    {"Title": "Critical", "Id": "finding-2", "Severity": {"Label": "CRITICAL"}, "Resources": []}
+  ], "NextToken": "extra-metadata"},
+  "lambda": {"Functions": [{"FunctionName": "image-function", "PackageType": "Image", "FunctionArn": "arn:fixture", "Description": "comma, \"quote\"", "TracingConfig": {"Mode": "Active"}, "MemorySize": 128}]},
+  "events": {"Rules": [{"Name": "event-rule", "Arn": "arn:fixture", "State": "ENABLED", "Description": "line\none"}]},
+  "nat": {"NatGateways": [{"NatGatewayId": "nat-0123", "NatGatewayAddresses": [{"PublicIp": "203.0.113.5"}]}]},
+  "mfa": {"MFADevices": [{"UserName": "hardware-user", "SerialNumber": "hardware-serial", "EnableDate": "2026-01-01T00:00:00Z"}]},
+  "scan": {"imageScanStatus": {"status": "ACTIVE"}, "imageScanFindings": {"enhancedFindings": [{"severity": "HIGH", "name": "CVE-fixture", "findingArn": "arn:fixture"}]}},
+  "identity": {"Account": "000000000000", "Arn": "arn:aws:iam::000000000000:user/fixture", "UserId": "fixture"}
+}

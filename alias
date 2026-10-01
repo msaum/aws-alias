@@ -1,0 +1,82 @@
+# AWS CLI 2.37.7+ aliases. Bootstrap the companion from a clean checkout.
+# Native aliases accept normal AWS flags. Helpers: --aws-profile/--aws-region
+# or place normal global flags after --, e.g. aws ami-snapshots ami-... -- --profile work.
+# See README.md and docs/migration.md for the release contracts and retired names.
+[toplevel]
+
+ag = apigateway
+as = autoscaling
+cfn = cloudformation
+cp = codepipeline
+ddb = dynamodb
+eb = elasticbeanstalk
+ec = elasticache
+sc = servicecatalog
+sg = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run sg "$@"; }; f
+sh = securityhub
+tostring = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run tostring "$@"; }; f
+region = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run region "$@"; }; f
+profiles = configure list-profiles
+upgrade = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" upgrade "$@"; }; f
+update-aliases = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" aliases "$@"; }; f
+install = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run install "$@"; }; f
+rotate-iam-keys = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run rotate-iam-keys "$@"; }; f
+iam-keys-days-remaining = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run iam-keys-days-remaining "$@"; }; f
+mfa = configure mfa-login
+whoami = sts get-caller-identity
+create-assume-role = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run create-assume-role "$@"; }; f
+find-access-key = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-access-key "$@"; }; f
+list-iam-users = iam list-users --query Users[].UserName --output table
+list-user-keys = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run list-user-keys "$@"; }; f
+list-virtual-mfa = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run list-virtual-mfa "$@"; }; f
+delete-virtual-mfa = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run delete-virtual-mfa "$@"; }; f
+find-users-without-mfa = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-users-without-mfa "$@"; }; f
+generate-sts-token = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run generate-sts-token "$@"; }; f
+assume = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run assume "$@"; }; f
+running-instances = ec2 describe-instances --filters Name=instance-state-name,Values=running --query 'Reservations[].Instances[].{ID:InstanceId,Hostname:PublicDnsName,Name:Tags[?Key==`Name`].Value|[0],Type:InstanceType,Platform:Platform||`Linux`}' --output table
+ebs-volumes = ec2 describe-volumes --query 'Volumes[].{VolumeId:VolumeId,State:State,Size:Size,Name:Tags[?Key==`Name`].Value|[0],AZ:AvailabilityZone}' --output table
+amazon-linux-amis = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run amazon-linux-amis "$@"; }; f
+list-sgs = ec2 describe-security-groups --query 'SecurityGroups[].[GroupId,GroupName]' --output text
+sg-rules = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run sg-rules "$@"; }; f
+get-group-id = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run get-group-id "$@"; }; f
+authorize-my-ip-by-name = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run authorize-my-ip-by-name "$@"; }; f
+public-ports = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run public-ports "$@"; }; f
+my-ip = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run my-ip "$@"; }; f
+allow-my-ip = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run allow-my-ip "$@"; }; f
+revoke-my-ip = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run revoke-my-ip "$@"; }; f
+allow-my-ip-all = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run allow-my-ip-all "$@"; }; f
+revoke-my-ip-all = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run revoke-my-ip-all "$@"; }; f
+delete-ami = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run delete-ami "$@"; }; f
+list-instances = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run list-instances "$@"; }; f
+search-instances = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run search-instances "$@"; }; f
+list-all-regions = ec2 describe-regions --query 'Regions[].RegionName' --output text
+list-azs = ec2 describe-availability-zones --query 'AvailabilityZones[].ZoneName' --output text
+vpc-peers = ec2 describe-vpc-peering-connections --query 'sort(VpcPeeringConnections[].Tags[?Key==`Name`].Value[]||`[]`)' --output text
+find-instances-in-sg = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-instances-in-sg "$@"; }; f
+find-ssh-open = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-ssh-open "$@"; }; f
+get-asg-instance-ips = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run get-asg-instance-ips "$@"; }; f
+find-host-by-instance-id = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-host-by-instance-id "$@"; }; f
+find-instance-by-public-ip = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-instance-by-public-ip "$@"; }; f
+find-nat-gateway-by-public-ip = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run find-nat-gateway-by-public-ip "$@"; }; f
+list-hosts-csv = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run list-hosts-csv "$@"; }; f
+list-igw = ec2 describe-internet-gateways  --query "InternetGateways[].{IGW:InternetGatewayId,VpcId: Attachments[].VpcId|[0], Name: Tags[?Key=='Name'].Value |[0] }"   --output table
+list-ngw = ec2 describe-nat-gateways  --query "NatGateways[].{VpcId:VpcId, NatGatewayId: NatGatewayId, SubnetId: SubnetId, PublicIp: NatGatewayAddresses[].PublicIp | [0], PrivateIp: NatGatewayAddresses[].PrivateIp | [0] }"  --output table
+list-vgw = ec2 describe-vpn-gateways --query 'VpnGateways[].{VpnGatewayId:VpnGatewayId,AmazonSideAsn:AmazonSideAsn,VpcIds:join(`,`,sort(VpcAttachments[].VpcId||`[]`)),Name:Tags[?Key==`Name`].Value|[0]}' --output table
+list-vpn-connection = ec2 describe-vpn-connections  --query "VpnConnections[].{ VpnConnectionId: VpnConnectionId, CustomerGatewayId:CustomerGatewayId,VpnGatewayId:VpnGatewayId, Name: Tags[?Key=='Name'].Value| [0] }"  --output table
+list-instance-status = ec2 describe-instance-status  --query "InstanceStatuses[].{InstanceId: InstanceId, State: InstanceState.Name, AZ: AvailabilityZone, SystemStatus: SystemStatus.Status, InstanceStatus: InstanceStatus.Status}"  --output table
+list-vpcs = ec2 describe-vpcs  --query  "Vpcs[].{VpcId: VpcId, CidrBlock: CidrBlock,  Name: Tags[?Key=='Name'].Value| [0], IsDefault: IsDefault}"  --output table
+list-subnets = ec2 describe-subnets  --query "Subnets[].{AZ:AvailabilityZone,VpcId:VpcId,SubnetId:SubnetId,CidrBlock:CidrBlock,    Name: Tags[?Key=='Name'].Value| [0]}"  --output table
+list-routes = ec2 describe-route-tables  --query "RouteTables[].{RouteTableId:RouteTableId, VpcId:VpcId, Name: Tags[?Key=='Name'].Value| [0], GatewayId: Routes[].{GatewayId:GatewayId,DestinationCidrBlock: DestinationCidrBlock} }  "  --output table
+get-dns-from-instance-id = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run get-dns-from-instance-id "$@"; }; f
+get-instance-id-from-dns = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run get-instance-id-from-dns "$@"; }; f
+log-groups = logs describe-log-groups --query 'logGroups[].logGroupName' --output text
+last-log = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run last-log "$@"; }; f
+docker-ecr-login = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run docker-ecr-login "$@"; }; f
+ecr-list-repositories = ecr describe-repositories --query 'repositories[].repositoryArn' --output text
+ecr-scan-findings = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run ecr-scan-findings "$@"; }; f
+sh-quick-report = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run sh-quick-report "$@"; }; f
+sh-findings-csv = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run sh-findings-csv "$@"; }; f
+lambda-list-csv = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run lambda-list-csv "$@"; }; f
+events-list-csv = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run events-list-csv "$@"; }; f
+
+ami-snapshots = !f() { exec python3 "${HOME}/.aws/cli/aws-alias/current/aws_alias_manager.py" run ami-snapshots "$@"; }; f

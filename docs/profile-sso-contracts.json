@@ -1,0 +1,452 @@
+[
+  {
+    "alias": "ag",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "as",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "cfn",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "cp",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "ddb",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "eb",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "ec",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "sc",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "sg",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "sh",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "tostring",
+    "category": "no-aws-auth",
+    "contract": "No AWS account credentials required. Reads a local JSON file.",
+    "evidence": "WorkflowTests / UpgradeTests / BundleTests / NativeModelTests"
+  },
+  {
+    "alias": "region",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "profiles",
+    "category": "no-aws-auth",
+    "contract": "No AWS account credentials required. Lists configured profile names.",
+    "evidence": "WorkflowTests / UpgradeTests / BundleTests / NativeModelTests"
+  },
+  {
+    "alias": "upgrade",
+    "category": "no-aws-auth",
+    "contract": "No AWS account credentials required. Updates CLI installation.",
+    "evidence": "WorkflowTests / UpgradeTests / BundleTests / NativeModelTests"
+  },
+  {
+    "alias": "update-aliases",
+    "category": "no-aws-auth",
+    "contract": "No AWS account credentials required. Updates managed bundle.",
+    "evidence": "WorkflowTests / UpgradeTests / BundleTests / NativeModelTests"
+  },
+  {
+    "alias": "install",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "rotate-iam-keys",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "iam-keys-days-remaining",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "mfa",
+    "category": "iam-user-auth",
+    "contract": "IAM-user OTP login via configure mfa-login. Identity Center uses aws sso login.",
+    "evidence": "NativeModelTests; AWS configure mfa-login contract"
+  },
+  {
+    "alias": "whoami",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "create-assume-role",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "find-access-key",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Reports IAM users, subject to IAM permissions.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "list-iam-users",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles. Reports IAM users, subject to IAM permissions.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-user-keys",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Reports IAM users, subject to IAM permissions.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "list-virtual-mfa",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Explicit IAM username required.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "delete-virtual-mfa",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "find-users-without-mfa",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Reports IAM users, subject to IAM permissions.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "generate-sts-token",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "assume",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "running-instances",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "ebs-volumes",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "amazon-linux-amis",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "list-sgs",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "sg-rules",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "get-group-id",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "authorize-my-ip-by-name",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "public-ports",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "my-ip",
+    "category": "no-aws-auth",
+    "contract": "No AWS account credentials required. Requests public IP over HTTPS.",
+    "evidence": "WorkflowTests / UpgradeTests / BundleTests / NativeModelTests"
+  },
+  {
+    "alias": "allow-my-ip",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Profile and region must be explicit helper arguments.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "revoke-my-ip",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Profile and region must be explicit helper arguments.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "allow-my-ip-all",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "revoke-my-ip-all",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "delete-ami",
+    "category": "retired",
+    "contract": "Migration error, exit 2; no AWS request.",
+    "evidence": "WorkflowTests / ActualAliasTests"
+  },
+  {
+    "alias": "list-instances",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "search-instances",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "list-all-regions",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-azs",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "vpc-peers",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "find-instances-in-sg",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "find-ssh-open",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "get-asg-instance-ips",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "find-host-by-instance-id",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "find-instance-by-public-ip",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "find-nat-gateway-by-public-ip",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "list-hosts-csv",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "list-igw",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-ngw",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-vgw",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-vpn-connection",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-instance-status",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-vpcs",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-subnets",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "list-routes",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "get-dns-from-instance-id",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "get-instance-id-from-dns",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "log-groups",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "last-log",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "docker-ecr-login",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported. Profile and region must be explicit helper arguments.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "ecr-list-repositories",
+    "category": "sso-native",
+    "contract": "Native AWS CLI provider; ordinary --profile before/after alias; SSO sessions and role profiles.",
+    "evidence": "ProfileSSOTests; LocalEndpointTests"
+  },
+  {
+    "alias": "ecr-scan-findings",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "sh-quick-report",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "sh-findings-csv",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "lambda-list-csv",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "events-list-csv",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  },
+  {
+    "alias": "ami-snapshots",
+    "category": "sso-workflow",
+    "contract": "SSO/role profile via --aws-profile or separator flags; ambient named profiles supported.",
+    "evidence": "EveryWorkflowProfileTests; ProfileSSOTests"
+  }
+]

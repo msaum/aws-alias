@@ -1,0 +1,27 @@
+# Local editor and OS files
+.idea/
+.vscode/
+.DS_Store
+*.swp
+*.swo
+*~
+
+# Python and test output
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Machine-specific configuration and credentials
+.aws/
+.codex/
+.agents/
+.env
+.env.*
+!.env.example
+
+# Local notes and generated audit output
+local/
+*.log
+/20??-??-?? - AWS CLI Alias Review*.html

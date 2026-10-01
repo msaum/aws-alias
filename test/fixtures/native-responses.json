@@ -1,0 +1,158 @@
+{
+  "whoami": {
+    "service": "sts",
+    "operation": "get-caller-identity",
+    "protocol": "query",
+    "response": "<GetCallerIdentityResponse><GetCallerIdentityResult><Account>123456789012</Account><UserId>fixture-user-id-0000</UserId><Arn>arn:aws:iam::123456789012:user/fixture</Arn></GetCallerIdentityResult></GetCallerIdentityResponse>",
+    "empty": "<GetCallerIdentityResponse><GetCallerIdentityResult /></GetCallerIdentityResponse>",
+    "expected": "123456789012"
+  },
+  "list-iam-users": {
+    "service": "iam",
+    "operation": "list-users",
+    "protocol": "query",
+    "response": "<ListUsersResponse><ListUsersResult><Users><member><UserName>fixture-user</UserName><UserId>fixture-user-id-0000</UserId><Arn>arn:aws:iam::123456789012:user/fixture</Arn></member></Users></ListUsersResult></ListUsersResponse>",
+    "empty": "<ListUsersResponse><ListUsersResult /></ListUsersResponse>",
+    "expected": "fixture-user"
+  },
+  "running-instances": {
+    "service": "ec2",
+    "operation": "describe-instances",
+    "protocol": "ec2",
+    "response": "<DescribeInstancesResponse><reservationSet><item><instancesSet><item><instanceId>i-0123456789abcdef0</instanceId><instanceType>t3.micro</instanceType><privateIpAddress>10.0.0.1</privateIpAddress><ipAddress>203.0.113.5</ipAddress><privateDnsName>service.internal</privateDnsName><dnsName>public.example</dnsName><subnetId>subnet-0123</subnetId><instanceState><name>running</name></instanceState><tagSet><item><key>Other</key><value>first</value></item><item><key>Name</key><value>quoted, \"name\"\nsecond line</value></item></tagSet></item><item><instanceId>i-0123456789abcdef1</instanceId><instanceType>t3.micro</instanceType><privateIpAddress>10.0.0.2</privateIpAddress><instanceState><name>stopped</name></instanceState></item></instancesSet></item></reservationSet></DescribeInstancesResponse>",
+    "empty": "<DescribeInstancesResponse />",
+    "expected": "i-0123456789abcdef0"
+  },
+  "ebs-volumes": {
+    "service": "ec2",
+    "operation": "describe-volumes",
+    "protocol": "ec2",
+    "response": "<DescribeVolumesResponse><volumeSet><item><volumeId>vol-fixture</volumeId><status>available</status><size>8</size><availabilityZone>us-east-1a</availabilityZone><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item></volumeSet></DescribeVolumesResponse>",
+    "empty": "<DescribeVolumesResponse />",
+    "expected": "fixture"
+  },
+  "list-sgs": {
+    "service": "ec2",
+    "operation": "describe-security-groups",
+    "protocol": "ec2",
+    "response": "<DescribeSecurityGroupsResponse><securityGroupInfo><item><groupId>sg-fixture</groupId><groupName>fixture-group</groupName></item></securityGroupInfo></DescribeSecurityGroupsResponse>",
+    "empty": "<DescribeSecurityGroupsResponse />",
+    "expected": "fixture"
+  },
+  "list-all-regions": {
+    "service": "ec2",
+    "operation": "describe-regions",
+    "protocol": "ec2",
+    "response": "<DescribeRegionsResponse><regionInfo><item><regionName>us-east-1</regionName></item></regionInfo></DescribeRegionsResponse>",
+    "empty": "<DescribeRegionsResponse />",
+    "expected": "us-east-1"
+  },
+  "list-azs": {
+    "service": "ec2",
+    "operation": "describe-availability-zones",
+    "protocol": "ec2",
+    "response": "<DescribeAvailabilityZonesResponse><availabilityZoneInfo><item><zoneName>us-east-1a</zoneName></item></availabilityZoneInfo></DescribeAvailabilityZonesResponse>",
+    "empty": "<DescribeAvailabilityZonesResponse />",
+    "expected": "us-east-1a"
+  },
+  "vpc-peers": {
+    "service": "ec2",
+    "operation": "describe-vpc-peering-connections",
+    "protocol": "ec2",
+    "response": "<DescribeVpcPeeringConnectionsResponse><vpcPeeringConnectionSet><item><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item></vpcPeeringConnectionSet></DescribeVpcPeeringConnectionsResponse>",
+    "empty": "<DescribeVpcPeeringConnectionsResponse />",
+    "expected": "chosen-name"
+  },
+  "list-igw": {
+    "service": "ec2",
+    "operation": "describe-internet-gateways",
+    "protocol": "ec2",
+    "response": "<DescribeInternetGatewaysResponse><internetGatewaySet><item><internetGatewayId>igw-fixture</internetGatewayId><attachmentSet><item><vpcId>vpc-fixture</vpcId></item></attachmentSet><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item><item><internetGatewayId>igw-empty</internetGatewayId><attachmentSet /></item></internetGatewaySet></DescribeInternetGatewaysResponse>",
+    "empty": "<DescribeInternetGatewaysResponse />",
+    "expected": "fixture"
+  },
+  "list-ngw": {
+    "service": "ec2",
+    "operation": "describe-nat-gateways",
+    "protocol": "ec2",
+    "response": "<DescribeNatGatewaysResponse><natGatewaySet><item><vpcId>vpc-fixture</vpcId><natGatewayId>nat-fixture</natGatewayId><subnetId>subnet-fixture</subnetId><natGatewayAddressSet><item><publicIp>203.0.113.1</publicIp><privateIp>10.0.0.1</privateIp></item></natGatewayAddressSet></item></natGatewaySet></DescribeNatGatewaysResponse>",
+    "empty": "<DescribeNatGatewaysResponse />",
+    "expected": "fixture"
+  },
+  "list-vgw": {
+    "service": "ec2",
+    "operation": "describe-vpn-gateways",
+    "protocol": "ec2",
+    "response": "<DescribeVpnGatewaysResponse><vpnGatewaySet><item><vpnGatewayId>vgw-fixture</vpnGatewayId><amazonSideAsn>64512</amazonSideAsn><attachments><item><vpcId>vpc-b</vpcId></item><item><vpcId>vpc-a</vpcId></item></attachments><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item><item><vpnGatewayId>vgw-empty</vpnGatewayId><attachments /></item></vpnGatewaySet></DescribeVpnGatewaysResponse>",
+    "empty": "<DescribeVpnGatewaysResponse />",
+    "expected": "vpc-a,vpc-b"
+  },
+  "list-vpn-connection": {
+    "service": "ec2",
+    "operation": "describe-vpn-connections",
+    "protocol": "ec2",
+    "response": "<DescribeVpnConnectionsResponse><vpnConnectionSet><item><vpnConnectionId>vpn-fixture</vpnConnectionId><customerGatewayId>cgw-fixture</customerGatewayId><vpnGatewayId>vgw-fixture</vpnGatewayId><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item></vpnConnectionSet></DescribeVpnConnectionsResponse>",
+    "empty": "<DescribeVpnConnectionsResponse />",
+    "expected": "fixture"
+  },
+  "list-instance-status": {
+    "service": "ec2",
+    "operation": "describe-instance-status",
+    "protocol": "ec2",
+    "response": "<DescribeInstanceStatusResponse><instanceStatusSet><item><instanceId>i-fixture</instanceId><instanceState><name>running</name></instanceState><availabilityZone>us-east-1a</availabilityZone><systemStatus><status>ok</status></systemStatus><instanceStatus><status>ok</status></instanceStatus></item></instanceStatusSet></DescribeInstanceStatusResponse>",
+    "empty": "<DescribeInstanceStatusResponse />",
+    "expected": "fixture"
+  },
+  "list-vpcs": {
+    "service": "ec2",
+    "operation": "describe-vpcs",
+    "protocol": "ec2",
+    "response": "<DescribeVpcsResponse><vpcSet><item><vpcId>vpc-fixture</vpcId><cidrBlock>10.0.0.0/16</cidrBlock><isDefault>false</isDefault><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item><item><vpcId>vpc-empty</vpcId><tagSet /></item></vpcSet></DescribeVpcsResponse>",
+    "empty": "<DescribeVpcsResponse />",
+    "expected": "fixture"
+  },
+  "list-subnets": {
+    "service": "ec2",
+    "operation": "describe-subnets",
+    "protocol": "ec2",
+    "response": "<DescribeSubnetsResponse><subnetSet><item><availabilityZone>us-east-1a</availabilityZone><vpcId>vpc-fixture</vpcId><subnetId>subnet-fixture</subnetId><cidrBlock>10.0.0.0/24</cidrBlock><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet></item></subnetSet></DescribeSubnetsResponse>",
+    "empty": "<DescribeSubnetsResponse />",
+    "expected": "fixture"
+  },
+  "list-routes": {
+    "service": "ec2",
+    "operation": "describe-route-tables",
+    "protocol": "ec2",
+    "response": "<DescribeRouteTablesResponse><routeTableSet><item><routeTableId>rtb-fixture</routeTableId><vpcId>vpc-fixture</vpcId><tagSet><item><key>Other</key><value>wrong</value></item><item><key>Name</key><value>chosen-name</value></item></tagSet><routeSet><item><gatewayId>igw-fixture</gatewayId><destinationCidrBlock>0.0.0.0/0</destinationCidrBlock></item></routeSet></item></routeTableSet></DescribeRouteTablesResponse>",
+    "empty": "<DescribeRouteTablesResponse />",
+    "expected": "fixture"
+  },
+  "log-groups": {
+    "service": "logs",
+    "operation": "describe-log-groups",
+    "protocol": "json",
+    "response": {
+      "logGroups": [
+        {
+          "logGroupName": "fixture/logs"
+        }
+      ]
+    },
+    "empty": {},
+    "expected": "fixture"
+  },
+  "ecr-list-repositories": {
+    "service": "ecr",
+    "operation": "describe-repositories",
+    "protocol": "json",
+    "response": {
+      "repositories": [
+        {
+          "repositoryArn": "arn:aws:ecr:us-east-1:123456789012:repository/fixture"
+        }
+      ]
+    },
+    "empty": {},
+    "expected": "fixture"
+  }
+}

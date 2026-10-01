@@ -1,0 +1,520 @@
+[
+  {
+    "name": "ag",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "apigateway",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "as",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "autoscaling",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "cfn",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "cloudformation",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "cp",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "codepipeline",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "ddb",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "dynamodb",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "eb",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "elasticbeanstalk",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "ec",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "elasticache",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "sc",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "servicecatalog",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "sh",
+    "action": "Keep",
+    "original_recommendation": "Keep the native service shortcut; validate it against the supported CLI and document its expansion.",
+    "result": "securityhub",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "sg",
+    "action": "Retire",
+    "original_recommendation": "Target security-group is invalid. Use ec2 with an explicit operation; avoid redefining this name ambiguously.",
+    "result": "Use aws ec2 with an explicit operation.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "upgrade",
+    "action": "Fix",
+    "original_recommendation": "Move installation and release distribution outside the alias runtime. Preserve user customization and rollback.",
+    "result": "Provider detection, CLI-native/Homebrew upgrade, path/version verification; --all combines updates.",
+    "test_family": "UpgradeTests"
+  },
+  {
+    "name": "install",
+    "action": "Retire",
+    "original_recommendation": "Move installation and release distribution outside the alias runtime. Preserve user customization and rollback.",
+    "result": "Run python3 aws_alias_manager.py install from a clean checkout.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "update-aliases",
+    "action": "Fix",
+    "original_recommendation": "Move installation and release distribution outside the alias runtime. Preserve user customization and rollback.",
+    "result": "Pinned complete bundles, protected edits, backup, lock, atomic pointer, rollback.",
+    "test_family": "BundleTests"
+  },
+  {
+    "name": "rotate-iam-keys",
+    "action": "Retire",
+    "original_recommendation": "Remove the downloaded credential-mutating dependency from the default bundle. Handle remaining long-lived keys in a dedicated process.",
+    "result": "Use your separately reviewed IAM key-rotation procedure.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "iam-keys-days-remaining",
+    "action": "Retire",
+    "original_recommendation": "Remove the implied 60-day expiry. A separately scoped age report needs explicit policy and per-key data.",
+    "result": "Use an explicit per-key age and rotation-policy report.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "mfa",
+    "action": "Replace",
+    "original_recommendation": "Migrate IAM-user OTP usage to configure mfa-login when supported; use SSO profiles for Identity Center users.",
+    "result": "configure mfa-login",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "assume",
+    "action": "Replace",
+    "original_recommendation": "Use configured role profiles and the CLI credential provider chain. Document consumers of exported credentials before retirement.",
+    "result": "Configure a role profile and select it with --profile.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "generate-sts-token",
+    "action": "Replace",
+    "original_recommendation": "Use configured role profiles and the CLI credential provider chain. Document consumers of exported credentials before retirement.",
+    "result": "Use supported AWS profile providers or configure mfa-login.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "whoami",
+    "action": "Simplify",
+    "original_recommendation": "Use sts get-caller-identity directly as a native alias; remove the jq dependency and wrapper.",
+    "result": "sts get-caller-identity",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "profiles",
+    "action": "Simplify",
+    "original_recommendation": "Use configure list-profiles; keep profile-selection advice in documentation.",
+    "result": "configure list-profiles",
+    "test_family": "NativeModelTests"
+  },
+  {
+    "name": "region",
+    "action": "Replace",
+    "original_recommendation": "Document configure get region and configure set region with an explicit profile; remove the ambiguous combined getter/setter.",
+    "result": "Use configure get region or configure set region with an explicit profile.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "tostring",
+    "action": "Fix",
+    "original_recommendation": "Validate the input path and invoke jq directly on it. Preserve file-read and JSON-parse failures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests"
+  },
+  {
+    "name": "create-assume-role",
+    "action": "Retire",
+    "original_recommendation": "Move role creation into reviewed infrastructure definitions. Current service-principal string construction is too broad for a generic shortcut.",
+    "result": "Define the role and trust policy in reviewed infrastructure code.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "delete-virtual-mfa",
+    "action": "Retire",
+    "original_recommendation": "Remove credential-device deletion from the default bundle. Use an explicit administrator workflow that resolves the real serial number and deactivation state.",
+    "result": "Use an administrator MFA deactivation/deletion procedure.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "find-access-key",
+    "action": "Fix",
+    "original_recommendation": "Retain only if used; validate the key, remove terminal control, fix the typo, and propagate per-user lookup failures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "list-iam-users",
+    "action": "Simplify",
+    "original_recommendation": "Use native IAM commands where possible. Validate any positional username and preserve caller context.",
+    "result": "iam list-users --query Users[].UserName --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-user-keys",
+    "action": "Simplify",
+    "original_recommendation": "Use native IAM commands where possible. Validate any positional username and preserve caller context.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "list-virtual-mfa",
+    "action": "Fix",
+    "original_recommendation": "Rename/document as assigned MFA devices; correct the named-user exit code and force JSON only for internal transforms.",
+    "result": "Explicit IAM username; assigned MFA device report, including hardware devices. SSO callers need IAM permissions for that user.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "find-users-without-mfa",
+    "action": "Fix",
+    "original_recommendation": "Define the user population and inspect assigned device state; virtual-only checks and PasswordLastUsed filtering omit users.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "running-instances",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "ec2 describe-instances --filters Name=instance-state-name,Values=running --query 'Reservations[].Instances[].{ID:InstanceId,Hostname:PublicDnsName,Name:Tags[?Key==`Name`].Value|[0],Type:InstanceType,Platform:Platform||`Linux`}' --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-sgs",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "ec2 describe-security-groups --query 'SecurityGroups[].[GroupId,GroupName]' --output text",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-all-regions",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "ec2 describe-regions --query 'Regions[].RegionName' --output text",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-azs",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "ec2 describe-availability-zones --query 'AvailabilityZones[].ZoneName' --output text",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "vpc-peers",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "ec2 describe-vpc-peering-connections --query 'sort(VpcPeeringConnections[].Tags[?Key==`Name`].Value[]||`[]`)' --output text",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "log-groups",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "logs describe-log-groups --query 'logGroups[].logGroupName' --output text",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "ecr-list-repositories",
+    "action": "Simplify",
+    "original_recommendation": "Prefer a native AWS alias with a query. Define output, argument, and empty-result contracts; preserve failures.",
+    "result": "ecr describe-repositories --query 'repositories[].repositoryArn' --output text",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "ebs-volumes",
+    "action": "Fix",
+    "original_recommendation": "Add ec2 describe-volumes and select the Name tag by key, then use a native alias.",
+    "result": "ec2 describe-volumes --query 'Volumes[].{VolumeId:VolumeId,State:State,Size:Size,Name:Tags[?Key==`Name`].Value|[0],AZ:AvailabilityZone}' --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "amazon-linux-amis",
+    "action": "Replace",
+    "original_recommendation": "Discover AL2023 AMIs through published SSM parameters. Expose architecture and region; preserve legacy lookup only for an explicit need.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "sg-rules",
+    "action": "Fix",
+    "original_recommendation": "Use full option names, preserve caller context, and document ingress/egress plus IPv4/IPv6 scope.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "get-group-id",
+    "action": "Fix",
+    "original_recommendation": "Repair the split variable and require VPC scope plus exactly one result, or retire after group-ID migration.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "authorize-my-ip-by-name",
+    "action": "Retire",
+    "original_recommendation": "Consolidate into explicit scoped grant/revoke commands; remove broken chaining and broad all-protocol shortcuts.",
+    "result": "Use allow-my-ip with an explicit group ID, protocol and port.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "allow-my-ip-all",
+    "action": "Retire",
+    "original_recommendation": "Consolidate into explicit scoped grant/revoke commands; remove broken chaining and broad all-protocol shortcuts.",
+    "result": "Use allow-my-ip with an explicit group ID, protocol and port.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "revoke-my-ip-all",
+    "action": "Retire",
+    "original_recommendation": "Consolidate into explicit scoped grant/revoke commands; remove broken chaining and broad all-protocol shortcuts.",
+    "result": "Use revoke-my-ip with an explicit group ID, protocol and port.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "public-ports",
+    "action": "Fix",
+    "original_recommendation": "Define the exposure report contract; test IPv6, all protocols, and port ranges. Do not equate a matching SG rule with proven internet reachability.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "find-ssh-open",
+    "action": "Fix",
+    "original_recommendation": "Define the exposure report contract; test IPv6, all protocols, and port ranges. Do not equate a matching SG rule with proven internet reachability.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "my-ip",
+    "action": "Fix",
+    "original_recommendation": "Use one documented name, curl failure/time limits, and IP validation; preserve a temporary myip compatibility alias if needed.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests"
+  },
+  {
+    "name": "allow-my-ip",
+    "action": "Fix",
+    "original_recommendation": "Retain only for a demonstrated workflow. Require group ID, protocol, port, validated CIDR, and consistent account/region context.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "revoke-my-ip",
+    "action": "Fix",
+    "original_recommendation": "Retain only for a demonstrated workflow. Require group ID, protocol, port, validated CIDR, and consistent account/region context.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "delete-ami",
+    "action": "Replace",
+    "original_recommendation": "Rename to ami-snapshots to match its existing read-only behavior. Keep deletion as a separate explicit workflow.",
+    "result": "Use ami-snapshots <ami-id> to list the associated snapshots.",
+    "test_family": "WorkflowTests.test_retired_entries_do_not_invoke_aws; ActualAliasTests"
+  },
+  {
+    "name": "list-instances",
+    "action": "Fix",
+    "original_recommendation": "Document region selection, avoid arbitrary grep patterns, collect partial failures, and show each account/region scope.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "search-instances",
+    "action": "Fix",
+    "original_recommendation": "Handle missing Name tags and safely encode the search value. Preserve context and AWS failures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "find-instances-in-sg",
+    "action": "Fix",
+    "original_recommendation": "Correct usage to group ID plus optional tag key, or return stable instance IDs with optional labels.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "get-asg-instance-ips",
+    "action": "Simplify",
+    "original_recommendation": "Use the existing group tag filter with a native private-IP query, preserving errors and caller flags.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "find-host-by-instance-id",
+    "action": "Replace",
+    "original_recommendation": "Choose between the actual PrivateDnsName field and the historical derived ip-* label; document the selected contract.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "find-instance-by-public-ip",
+    "action": "Fix",
+    "original_recommendation": "Return stable resource IDs with optional Name values; validate addresses and handle missing tags/multiple results.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "find-nat-gateway-by-public-ip",
+    "action": "Fix",
+    "original_recommendation": "Return stable resource IDs with optional Name values; validate addresses and handle missing tags/multiple results.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "list-hosts-csv",
+    "action": "Fix",
+    "original_recommendation": "Correct InstanceId, use fixed columns with nullable Name, and add CSV fixtures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "list-igw",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-internet-gateways  --query \"InternetGateways[].{IGW:InternetGatewayId,VpcId: Attachments[].VpcId|[0], Name: Tags[?Key=='Name'].Value |[0] }\"   --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-ngw",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-nat-gateways  --query \"NatGateways[].{VpcId:VpcId, NatGatewayId: NatGatewayId, SubnetId: SubnetId, PublicIp: NatGatewayAddresses[].PublicIp | [0], PrivateIp: NatGatewayAddresses[].PrivateIp | [0] }\"  --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-vpn-connection",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-vpn-connections  --query \"VpnConnections[].{ VpnConnectionId: VpnConnectionId, CustomerGatewayId:CustomerGatewayId,VpnGatewayId:VpnGatewayId, Name: Tags[?Key=='Name'].Value| [0] }\"  --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-instance-status",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-instance-status  --query \"InstanceStatuses[].{InstanceId: InstanceId, State: InstanceState.Name, AZ: AvailabilityZone, SystemStatus: SystemStatus.Status, InstanceStatus: InstanceStatus.Status}\"  --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-vpcs",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-vpcs  --query  \"Vpcs[].{VpcId: VpcId, CidrBlock: CidrBlock,  Name: Tags[?Key=='Name'].Value| [0], IsDefault: IsDefault}\"  --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-subnets",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-subnets  --query \"Subnets[].{AZ:AvailabilityZone,VpcId:VpcId,SubnetId:SubnetId,CidrBlock:CidrBlock,    Name: Tags[?Key=='Name'].Value| [0]}\"  --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-routes",
+    "action": "Keep",
+    "original_recommendation": "Retain the native query alias. Add response-shape fixtures and document fixed table output and scope.",
+    "result": "ec2 describe-route-tables  --query \"RouteTables[].{RouteTableId:RouteTableId, VpcId:VpcId, Name: Tags[?Key=='Name'].Value| [0], GatewayId: Routes[].{GatewayId:GatewayId,DestinationCidrBlock: DestinationCidrBlock} }  \"  --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "list-vgw",
+    "action": "Fix",
+    "original_recommendation": "Project VpcAttachments as a list and decide how multiple attached VPCs appear in the table.",
+    "result": "ec2 describe-vpn-gateways --query 'VpnGateways[].{VpnGatewayId:VpnGatewayId,AmazonSideAsn:AmazonSideAsn,VpcIds:join(`,`,sort(VpcAttachments[].VpcId||`[]`)),Name:Tags[?Key==`Name`].Value|[0]}' --output table",
+    "test_family": "NativeModelTests; LocalEndpointTests"
+  },
+  {
+    "name": "get-dns-from-instance-id",
+    "action": "Simplify",
+    "original_recommendation": "Return the desired field directly with a native query where possible; define absent/multiple-match behavior.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "get-instance-id-from-dns",
+    "action": "Simplify",
+    "original_recommendation": "Return the desired field directly with a native query where possible; define absent/multiple-match behavior.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "last-log",
+    "action": "Replace",
+    "original_recommendation": "Prefer logs tail for recent cross-stream events. If latest-stream semantics are required, keep a distinct tested helper.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "docker-ecr-login",
+    "action": "Fix",
+    "original_recommendation": "Use get-login-password and Docker password stdin with an explicit registry and checked failures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "ecr-scan-findings",
+    "action": "Fix",
+    "original_recommendation": "Accept image tag/digest, cover basic and enhanced scans, and report pending/failed status distinctly from no findings.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "sh-quick-report",
+    "action": "Fix",
+    "original_recommendation": "Use INFORMATIONAL, count Findings explicitly, reduce repeat fetches where useful, and state workflow/account/region scope.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "sh-findings-csv",
+    "action": "Fix",
+    "original_recommendation": "Use portable temp handling or checked in-memory processing, direct jq raw CSV, and a fixed resource/remediation schema.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "lambda-list-csv",
+    "action": "Fix",
+    "original_recommendation": "Keep a stable named TracingConfig.Mode column and nullable image-function fields; add headers and round-trip fixtures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  },
+  {
+    "name": "events-list-csv",
+    "action": "Fix",
+    "original_recommendation": "Add headers and explicit event-bus selection or document default-bus scope; preserve query failures.",
+    "result": "Companion workflow; inputs and outputs above.",
+    "test_family": "WorkflowTests.test_every_aws_workflow_success_and_failure"
+  }
+]
