@@ -28,6 +28,20 @@ aws find-ssh-open -- --profile example-sso --region us-east-1
 
 Grant/revoke and ECR login require explicit profile and region arguments. Ambient environment values alone are insufficient for those commands.
 
+Every AWS helper shows command-specific guidance when it has no usable profile. Example:
+
+```text
+ERROR: Select a profile using either:
+  aws find-ssh-open --aws-profile PROFILE
+  aws find-ssh-open -- --profile PROFILE
+AWS CLI consumes ordinary --profile flags before invoking this helper.
+You can also set AWS_PROFILE or AWS_DEFAULT_PROFILE.
+```
+
+Helpers requiring explicit context also show both region options. Positional arguments appear as placeholders; replace them with the arguments for your command.
+
+AWS CLI's [shell-alias implementation](https://github.com/aws/aws-cli/blob/v2/awscli/alias.py) invokes the child with the remaining arguments and inherited environment. It does not forward parsed global options or the original full command. Reading parent-process arguments is outside the supported alias interface.
+
 ## An SSO session is missing or expired
 
 ```sh

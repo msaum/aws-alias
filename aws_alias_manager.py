@@ -559,7 +559,7 @@ class AWS:
         self.endpoint = args.endpoint_url
         self.ca_bundle = args.ca_bundle
         if not self.profile:
-            raise Error("Select a profile with --aws-profile, AWS_PROFILE, or '-- --profile NAME'. AWS consumes ordinary global flags before calling shell aliases.", 2)
+            raise Error(profile_guidance(args.workflow), 2)
         self.options = ["--profile", self.profile, "--no-cli-pager", "--no-cli-auto-prompt",
                         "--cli-connect-timeout", "15", "--cli-read-timeout", "30"]
         if self.endpoint:
@@ -692,6 +692,7 @@ def rules(groups, *, public=False, ssh=False):
 
 def workflow_parser(name):
     p = argparse.ArgumentParser(prog="aws " + name, allow_abbrev=False)
+    p.set_defaults(workflow=name)
     p.add_argument("--profile", "--aws-profile", dest="profile")
     p.add_argument("--region", "--aws-region", dest="region")
     p.add_argument("--endpoint-url", "--aws-endpoint-url", dest="endpoint_url")
@@ -748,6 +749,28 @@ def workflow_parser(name):
     return p
 
 
+def profile_guidance(name, *, explicit_region=False):
+    parser = workflow_parser(name)
+    positional = ["<" + action.dest.replace("_", "-") + ">"
+                  for action in parser._actions
+                  if not action.option_strings and action.nargs != "?"]
+    for group in parser._mutually_exclusive_groups:
+        if group.required:
+            action = group._group_actions[0]
+            positional += [action.option_strings[0], "<" + action.dest.replace("_", "-") + ">"]
+    command = " ".join(["aws", name, *positional])
+    region = " --aws-region REGION" if explicit_region else ""
+    separator_region = " --region REGION" if explicit_region else ""
+    selection = "an explicit profile and region" if explicit_region else "a profile"
+    message = (f"Select {selection} using either:\n"
+               f"  {command} --aws-profile PROFILE{region}\n"
+               f"  {command} -- --profile PROFILE{separator_region}\n"
+               "AWS CLI consumes ordinary --profile flags before invoking this helper.")
+    if not explicit_region:
+        message += "\nYou can also set AWS_PROFILE or AWS_DEFAULT_PROFILE."
+    return message
+
+
 WORKFLOWS = {
     "tostring", "my-ip", "list-user-keys", "list-virtual-mfa", "find-access-key",
     "find-users-without-mfa", "sg-rules", "get-group-id", "public-ports", "find-ssh-open",
@@ -778,7 +801,7 @@ def run_workflow(name, argv):
         raise Error("Expected a 20-character access key ID.", 2)
     if name in {"allow-my-ip", "revoke-my-ip"}:
         if not args.profile or not args.region:
-            raise Error("Grant/revoke requires explicit --aws-profile and --aws-region (or options after '--').", 2)
+            raise Error(profile_guidance(name, explicit_region=True), 2)
         try:
             network = ipaddress.ip_network(args.cidr or (current_ip() + "/32"), strict=True)
         except ValueError as exc:
@@ -787,7 +810,7 @@ def run_workflow(name, argv):
             raise Error("The my-IP helpers accept only /32 or /128 host CIDRs.", 2)
     if name == "docker-ecr-login":
         if not args.region or not args.profile:
-            raise Error("ECR login requires an explicit profile and region.", 2)
+            raise Error(profile_guidance(name, explicit_region=True), 2)
         expected = re.fullmatch(r"\d{12}\.dkr\.ecr\.([a-z0-9-]+)\.amazonaws\.com(?:\.cn)?", args.registry)
         if not expected or expected.group(1) != args.region:
             raise Error("Registry must be a private ECR hostname in the selected region.", 2)

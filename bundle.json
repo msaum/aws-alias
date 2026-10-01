@@ -4,6 +4,6 @@
   "minimum_python": "3.11",
   "sha256": {
     "alias": "a7e8a8db6416214c14dcd2bb76f3fff256cffe0bb3df25b38c4b8e8836f3993f",
-    "aws_alias_manager.py": "0e6639ea89ede66e350297f0a6a1b5ace7940f0b1d405563af5ada7c30b739e6"
+    "aws_alias_manager.py": "d1fbec6758ab835ab7ee23d481f9c4392a64c310aee341d7ee0be4de3e54986e"
   }
 }

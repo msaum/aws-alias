@@ -225,10 +225,42 @@ class WorkflowTests(IsolatedCase):
 
     def test_missing_profile_stops_before_aws(self):
         env = {k: v for k, v in self.env.items() if k not in {"AWS_PROFILE", "AWS_DEFAULT_PROFILE"}}
-        result = self.run_manager("run", "list-user-keys", "user", env=env)
-        self.assertEqual(result.returncode, 2)
-        self.assertIn("--aws-profile", result.stderr)
-        self.assertEqual(self.calls(), [])
+        explicit = {"allow-my-ip", "revoke-my-ip", "docker-ecr-login"}
+        for name, (args, _steps) in self.cases().items():
+            with self.subTest(name=name):
+                # Remove the explicitly scoped fixture arguments as a caller
+                # using consumed outer globals would appear to the helper.
+                args = list(args)
+                for flag in ("--aws-profile", "--aws-region"):
+                    if flag in args:
+                        index = args.index(flag)
+                        del args[index:index + 2]
+                self.program([])
+                result = self.run_manager("run", name, *args, env=env)
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn(f"aws {name}", result.stderr)
+                self.assertIn("--aws-profile PROFILE", result.stderr)
+                self.assertIn("-- --profile PROFILE", result.stderr)
+                self.assertIn("AWS CLI consumes ordinary --profile", result.stderr)
+                if name in explicit:
+                    self.assertIn("--aws-region REGION", result.stderr)
+                    self.assertIn("--region REGION", result.stderr)
+                if name == "ecr-scan-findings":
+                    self.assertIn("--image-tag <image-tag>", result.stderr)
+                self.assertEqual(self.calls(), [])
+
+    def test_partial_explicit_context_shows_both_forms_before_aws(self):
+        for name in ("allow-my-ip", "revoke-my-ip", "docker-ecr-login"):
+            args = (["000000000000.dkr.ecr.us-east-1.amazonaws.com"] if name == "docker-ecr-login"
+                    else ["sg-0123", "tcp", "22"])
+            for flags in (["--aws-profile", "fixture"], ["--aws-region", "us-east-1"]):
+                with self.subTest(name=name, flags=flags):
+                    self.program([])
+                    result = self.run_manager("run", name, *args, *flags)
+                    self.assertEqual(result.returncode, 2, result.stderr)
+                    self.assertIn("--aws-profile PROFILE --aws-region REGION", result.stderr)
+                    self.assertIn("-- --profile PROFILE --region REGION", result.stderr)
+                    self.assertEqual(self.calls(), [])
 
     def test_no_mutation_with_invalid_security_group_arguments(self):
         invalid = [[], ["sg-0123"], ["sg-0123", "tcp", "70000"], ["sg-0123", "tcp", "22", "0.0.0.0/0"],
@@ -646,6 +678,8 @@ class ActualAliasTests(IsolatedCase):
         for flags in (["--profile", "other", "get-asg-instance-ips", "group"], ["get-asg-instance-ips", "group", "--profile", "other"]):
             result = subprocess.run([REAL_AWS, *flags], env=env, text=True, capture_output=True, timeout=30)
             self.assertEqual(result.returncode, 2, result.stderr)
+            self.assertIn("aws get-asg-instance-ips <asg-name> --aws-profile PROFILE", result.stderr)
+            self.assertIn("aws get-asg-instance-ips <asg-name> -- --profile PROFILE", result.stderr)
             self.assertEqual(self.calls(), [])
 
     def test_all_migration_aliases_and_tostring_through_real_cli(self):
